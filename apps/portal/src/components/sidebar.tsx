@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   name: string;
@@ -72,6 +73,12 @@ const navigation: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = '/login';
+  };
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-[var(--border)] bg-[var(--card)]">
@@ -156,22 +163,37 @@ export function Sidebar() {
       </div>
 
       {/* User section */}
-      <div className="border-t border-[var(--border)] p-4">
+      <div className="border-t border-[var(--border)] p-4 space-y-2">
         <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--muted)] cursor-pointer">
           <div className="relative">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-md">
-              <span className="text-sm font-medium text-white">MG</span>
+              <span className="text-sm font-medium text-white">
+                {user?.email?.charAt(0).toUpperCase() || 'MG'}
+              </span>
             </div>
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[var(--card)] bg-emerald-500" />
           </div>
           <div className="flex-1 truncate">
             <p className="text-sm font-medium">Margaret&apos;s Care Team</p>
-            <p className="text-xs text-[var(--muted-foreground)]">Primary Caregiver</p>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              {user?.email || 'Primary Caregiver'}
+            </p>
           </div>
           <svg className="h-4 w-4 text-[var(--muted-foreground)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
           </svg>
         </div>
+        
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-all hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+          </svg>
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );
