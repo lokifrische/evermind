@@ -1,0 +1,233 @@
+﻿Full Build Scope ù Cognitive Support & Memory Preservation Platform 
+ 
+Platform Overview 
+A native mobile app for the primary user (person with cognitive decline), a web-based caregiver 
+portal for administrators and family managers, and a lightweight contributor interface for 
+extended family and friends. All three interfaces share a common backend. The product is 
+positioned as a wellness and lifestyle tool, not a medical device. 
+ 
+User Roles 
+Primary User ù the person with cognitive decline. Interacts exclusively through the mobile app. 
+Cannot modify settings, manage accounts, or access administrative functions. All configuration 
+is done on their behalf by the caregiver. Authentication is simplified (PIN, biometric, or no-auth 
+auto-login). This person never creates an account, enters a password, or manages preferences 
+directly. 
+Caregiver/Administrator ù typically an adult child, spouse, or professional caregiver. Full access 
+to the web portal. Creates and manages the primary userÆs account and profile. Uploads and 
+moderates all content. Configures accessibility settings, reminders, contacts, games, AI 
+assistant behavior, notification preferences, and privacy controls. Views all engagement 
+analytics and activity logs. Manages contributor access. This is the person who purchases, sets 
+up, and maintains the platform. 
+Contributor ù extended family and friends. Access through a shared link or optional lightweight 
+account. Can upload photos, record video messages, and record voice messages for the 
+primary user. Cannot access analytics, settings, or the primary userÆs content library. Content 
+may pass through caregiver moderation before reaching the primary user depending on 
+configuration. 
+ 
+Primary User Mobile App (iOS & Android ù React Native/Expo) 
+Core Platform 
+Accessibility-first UI framework with enforced minimum touch targets, dynamic font scaling 
+across four sizes, high contrast mode, dark/light themes, haptic feedback, audio feedback, 
+reduced motion mode, orientation lock, and full screen reader support. Custom component 
+library that enforces all accessibility rules at the code level so no feature can violate the design 
+principles. 
+Home screen with time-of-day greeting using userÆs name and photo, full natural-language date 
+display, four fixed-position color-coded feature tiles (Memories, Family, Games, Talk to Me), 
+daily highlight strip with rotating content, and subtle new-content indicators without number 
+badges. 
+Navigation system enforcing a two-tap maximum depth to any feature. Persistent bottom 
+navigation bar with center Home button visible on every screen. Consistent back button 
+placement with text label. No hamburger menus, no drawers, no gesture-required navigation, no 
+time-limited interactions. Gentle non-technical error handling throughout. 
+Voice system with persistent microphone button on every screen, natural language intent 
+recognition handling imprecise and varied speech, global and contextual voice commands, 
+
+voice guidance output with configurable speech speed, tolerance for long pauses, repetition, 
+mumbling, and background noise. Optional wake word. 
+Offline architecture with proactive caching of recent photos, recordings, video messages, 
+contact data, game assets, reminders, and morning briefing data. Silent background sync on 
+reconnect. Graceful fallbacks for all connectivity-dependent features. 
+Simplified authentication configurable by caregiver: no-auth, PIN, biometric, or 
+caregiver-initiated unlock. No session timeout while app is in foreground. Configurable grace 
+period when backgrounded. 
+Caregiver-driven onboarding with connection via QR code or numeric code. Primary user sees a 
+welcome screen with their own photo, an optional four-screen tour, and lands on the home 
+screen in under 60 seconds with no account creation. 
+Memories Module 
+Story recording with large microphone button, visual waveform, no visible timer, gentle prompts 
+on silence, auto-stop after extended silence, confirmation screen, and automatic speech-to-text 
+transcription configured for elderly speech patterns. 
+Photo and video capture with simplified camera interface, single-select photo picker with 
+oversized thumbnails, and preview confirmation flow. 
+Memory prompt system with a built-in library of approximately 100 prompts organized by theme, 
+daily rotating prompt on home screen, caregiver-created custom prompts, and prompt 
+scheduling. 
+Tagging system with automatic tags from EXIF data, automatic tags from transcription content, 
+AI-assisted tag suggestions, and caregiver manual tagging. Tag types include people, places, 
+dates, life periods, themes, and custom. 
+Timeline view with vertical scrollable cards showing thumbnails, titles, dates, and tags. Date 
+headers while scrolling. Filter toggle buttons by type, life period, and people. Caregiver-curated 
+named collections. 
+Memory playback for photos (full-screen with associated audio playback option and navigation 
+arrows), voice recordings (auto-play with waveform and optional scrolling transcription), and 
+videos (full-screen with play/pause only). 
+Slideshow mode with full-screen crossfade display, configurable duration per photo, voice 
+recording narration with auto-duration override, background music with caregiver-selected 
+genre, auto volume adjustment, minimal tap-to-reveal controls, and caregiver-built named 
+slideshows with custom order and music. 
+This Day in History daily feature matching current calendar date to memories across all years, 
+with notification, home screen display, and offline support. 
+Text entry alternative for stories with large-font keyboard and voice-to-text dictation. 
+Family Module 
+Video and voice message inbox displaying sender faces as large circular photos in a grid. Tap 
+face to play most recent message immediately. Video messages full-screen, voice messages 
+with sender photo. Post-playback replay and message history per sender. Messages never 
+deleted, archived after configurable period. Auto-transcription subtitles on videos. 
+Scheduled messages from caregiver delivered at specific times as video, voice, or 
+text-to-speech. One-time or recurring. Provides orientation and emotional connection. 
+
+python : Traceback (most recent call last):
+At line:1 char:1
++ python -c "import fitz; doc = fitz.open(r'C:\Users\blake\.clawdbot\me ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "<string>", line 1, in <module>
+  File "C:\Users\blake\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u200b' in position 244: character maps to <undefined>
+Family photo feed as a vertically scrolling reverse-chronological stream with large photos, 
+sender names, captions, and one-tap reaction buttons (heart, smiley, thumbs up). Reaction 
+notifications sent to contributors. 
+Video calling with large labeled contact photo tiles for 4-8 caregiver-configured contacts. Tap to 
+call immediately. Full-screen incoming call display with large answer button, no swipe gestures. 
+WebRTC-based with no third-party app dependency. Auto-answer option per contact. 
+During-call interface showing only the other personÆs face and an end button. Graceful quality 
+degradation and auto-reconnect. 
+Morning briefing delivered at configurable time with day/date, weather, schedule, and featured 
+memory. Configurable elements. 
+Medication reminders with name, dosage, time, optional pill photo, acknowledgment and snooze 
+buttons, and caregiver escalation after configurable window. 
+Appointment reminders with title, time, location, context about whoÆs involved, and configurable 
+pre-event timing. 
+Mood check-in at configurable frequency with emoji-based response options. Responses logged 
+for caregiver with alerts on sustained negative trends. 
+Passive activity log tracking app opens, section usage, messages viewed, games played, and 
+reminders acknowledged. Data visible only to caregiver. 
+Games Module 
+Memory matching game using userÆs own family photos with configurable grid sizes, adaptive 
+difficulty, extended card visibility, celebration feedback, and two-player family mode. 
+Word association with prompt word and multiple choice options, gentle hints, vocabulary 
+calibrated to userÆs interests. 
+Story completion with fill-in-the-blank short stories, multiple choice or voice input, adaptive 
+difficulty. 
+Picture naming with photo display and identification via tap or voice, progressing from common 
+objects to family member recognition. 
+Daily word game as a quick rotating puzzle (unscramble, missing letter, rhyme) designed as a 
+30-60 second morning warm-up. 
+Name That Tune with era-appropriate audio clips and multiple choice answers. 
+Sound matching with audio clips and photo options in a calming nature theme. 
+Musical Memory Lane with decade-curated playlists, thumbs up/down rating, and preference 
+profile building for use in slideshows and background music. 
+Simple jigsaw puzzles using family photos with large pieces and generous snap-to-grid. 
+Sorting games with drag or tap-to-place categorization and gentle correction. 
+Spot the difference with generous hit detection and progressive difficulty. 
+Session fatigue warning after configurable play duration with gentle suggestion to take a break. 
+Daily game limits configurable by caregiver with redirect to other activities. 
+Game analytics tracked passively: games played, frequency, duration, difficulty levels, trends 
+over time. Data positioned as engagement information, not cognitive assessment. 
+AI Assistant 
+Conversational interface with voice-first interaction, visual feedback during 
+listening/processing/responding, text input alternative, session context within conversations, and 
+
+no context persistence between sessions. Access to user profile, preferences, and memory 
+library metadata for personalized responses. 
+Warm, patient, encouraging personality using the userÆs preferred name. Configurable speech 
+speed and assistant name. Repeats information willingly without noting repetition. Identifies as a 
+digital helper, never pretends to be human. 
+Platform navigation and task execution: navigate to any section, play specific memories or 
+slideshows or messages, initiate video calls, send reactions, provide 
+date/time/weather/schedule information, step-by-step help for any feature, undo and correction 
+support. 
+Proactive daily support: morning greeting with briefing, medication reminders with confirmation 
+and escalation, appointment reminders with context, activity suggestions during low 
+engagement, and evening wind-down suggestions. All on configurable schedules. 
+Companionship and grounding: calm orientation responses to date/location/identity questions, 
+conversational engagement drawing on userÆs life history, calming responses to confusion or 
+distress with reassurance and practical options, light cognitive prompts, and never minimizing 
+feelings or providing clinical advice. 
+Conversation logging with timestamped transcripts accessible to caregiver. 
+Safety guardrails: no medical advice under any circumstances with redirect to caregiver or 
+doctor, no harmful or distressing content, distress detection with caregiver alerting and offer to 
+connect, caregiver-configurable topic boundaries for sensitive subjects, transparency about 
+being a digital assistant, and configurable conversation rate limiting. 
+ 
+Caregiver Web Portal (Next.js) 
+Dashboard 
+At-a-glance summary of the primary userÆs status: todayÆs activity summary, medication 
+reminder status, mood check-in responses with weekly trend, 30-day engagement trend chart, 
+alerts and flags (missed medications, inactivity, distress indicators), and recent content 
+additions. 
+Content Management 
+Bulk photo upload with drag-and-drop, automatic EXIF date sorting, and batch tagging. Story 
+editing with title, description, caption, tag, and privacy level management. Ability to associate 
+voice recordings with specific photos. Content moderation queue with approve, edit, archive, 
+and flag actions. Configurable moderation mode (auto-approve all, review all, review contributor 
+content only). Collection builder for named memory groups with custom order, descriptions, and 
+cover photos. Memory prompt management with creation, editing, scheduling, and response 
+tracking. PDF memory book generation with configurable layouts and cover page. Complete 
+data export of all media, transcriptions, and metadata as a structured archive. 
+Contact and Communication Management 
+Video calling contact management with photo upload, priority ordering, and auto-answer 
+configuration per contact. Contributor invitation and permission management. Scheduled 
+message recording, scheduling, editing, and deletion with calendar view. Message library for 
+pre-recorded messages assigned to time slots. 
+Reminder and Routine Configuration 
+
+Medication management with dosage, timing, photos, and escalation rules. Medication 
+adherence history calendar. Appointment management with details and reminder timing. 
+Morning briefing customization with element selection and delivery time. Mood check-in 
+configuration with frequency and mood options. 
+Analytics and Reporting 
+Engagement dashboard with daily, weekly, and monthly views broken down by section. Time per 
+session, most viewed memories, most played games and difficulty levels, message interaction 
+rates, reminder adherence rates. Mood tracking charted over time with pattern detection and 
+sustained negative trend alerts. Game performance trends over weeks and months. AI assistant 
+usage data including conversation count, average length, common request types, and flagged 
+responses. Conversation log access with full transcripts. All analytics exportable as PDF 
+summary reports or raw CSV. PDF reports formatted for sharing with healthcare providers with 
+disclaimer that data represents engagement, not clinical assessment. 
+Settings and Configuration 
+User profile editing (name, photo, interests, life details). Accessibility settings (font size, contrast 
+mode, theme, voice speed, reduced motion, haptics, audio feedback, orientation lock). 
+Authentication method selection and session timeout configuration. Notification preferences with 
+channel selection (push, email, SMS) and activity thresholds. Game settings (enable/disable 
+specific games, difficulty ranges, session limits, family play mode). AI assistant settings (name, 
+proactive interaction schedule, conversation limits, topic boundaries, capability toggles). Privacy 
+settings (moderation mode, default privacy levels, data retention, export, deletion). 
+ 
+Contributor Interface 
+Zero-friction shared link experience requiring no account creation, no app download, and no 
+login. Simple page with options to record a video message (up to 3 minutes), record a voice 
+message, upload a photo with caption, or upload multiple photos with captions. Content routed 
+to the primary userÆs library after optional caregiver moderation. 
+Optional lightweight account for contributors who want ongoing access: see when their content 
+was viewed, receive reaction notifications, upload content regularly without needing a fresh link 
+each time. 
+ 
+Backend and Infrastructure (Supabase + Supporting Services) 
+Supabase providing PostgreSQL database, authentication, file storage for all media, and 
+realtime subscriptions for live notifications. Shared API layer serving both mobile app and web 
+portal. Content delivery network for media file delivery. Speech-to-text service configured for 
+elderly speech patterns. High-quality neural text-to-speech for voice output. Large language 
+model API integration for AI assistant with system prompts enforcing personality, safety 
+guardrails, and behavioral boundaries. WebRTC with TURN server for video calling. Image 
+compression pipeline preserving face clarity. Production, staging, and development 
+environments. Monitoring and alerting. CI/CD pipeline. 
+ 
+Explicitly Excluded from Full Build (Future Phases) 
+Medical information module with clinically reviewed content for the AI assistant. Peer community 
+for users and caregivers. Direct healthcare provider integration with HIPAA compliance and 
+
