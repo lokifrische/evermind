@@ -134,6 +134,27 @@ export function Sidebar() {
         })}
       </nav>
 
+      {/* Patient Mode Preview */}
+      <div className="px-3 pb-2">
+        <Link
+          href="/patient"
+          className="flex items-center gap-3 rounded-lg bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3 text-sm font-medium text-sky-700 transition-all hover:from-sky-100 hover:to-indigo-100 hover:shadow-md dark:from-sky-900/30 dark:to-indigo-900/30 dark:text-sky-300 dark:hover:from-sky-900/50 dark:hover:to-indigo-900/50"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-md">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold">Patient Mode</p>
+            <p className="text-xs text-sky-600 dark:text-sky-400">Preview Margaret&apos;s view</p>
+          </div>
+          <svg className="h-4 w-4 text-sky-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          </svg>
+        </Link>
+      </div>
+
       {/* User section */}
       <div className="border-t border-[var(--border)] p-4">
         <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--muted)] cursor-pointer">
