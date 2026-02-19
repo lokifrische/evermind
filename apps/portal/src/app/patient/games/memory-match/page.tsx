@@ -202,47 +202,44 @@ export default function MemoryMatchGame() {
             <motion.button
               key={card.id}
               onClick={() => handleCardClick(card.id)}
-              className="relative aspect-square w-full overflow-hidden rounded-2xl shadow-lg"
+              className="relative aspect-square w-full overflow-hidden rounded-2xl shadow-lg [perspective:1000px]"
               style={{ minWidth: difficulty === "hard" ? "70px" : "80px" }}
               whileHover={!isCardFlipped(card.id) ? { scale: 1.05 } : {}}
               whileTap={!isCardFlipped(card.id) ? { scale: 0.95 } : {}}
-              initial={{ rotateY: 0 }}
-              animate={{ rotateY: isCardFlipped(card.id) ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
             >
-              {/* Card Back */}
+              {/* Card Inner - handles the flip */}
               <motion.div
-                className="absolute inset-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600"
-                style={{
-                  backfaceVisibility: "hidden",
-                  rotateY: 0,
-                }}
+                className="relative h-full w-full [transform-style:preserve-3d]"
+                initial={{ rotateY: 0 }}
+                animate={{ rotateY: isCardFlipped(card.id) ? 180 : 0 }}
+                transition={{ duration: 0.4 }}
               >
-                <span className="text-4xl">?</span>
-              </motion.div>
+                {/* Card Back */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 [backface-visibility:hidden]"
+                >
+                  <span className="text-4xl">?</span>
+                </div>
 
-              {/* Card Front */}
-              <motion.div
-                className="absolute inset-0 overflow-hidden rounded-2xl"
-                style={{
-                  backfaceVisibility: "hidden",
-                  rotateY: 180,
-                }}
-              >
-                <img
-                  src={card.image}
-                  alt={card.name}
-                  className="h-full w-full object-cover"
-                />
-                {card.isMatched && (
-                  <motion.div
-                    className="absolute inset-0 flex items-center justify-center bg-emerald-500/80"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <span className="text-4xl">✓</span>
-                  </motion.div>
-                )}
+                {/* Card Front */}
+                <div
+                  className="absolute inset-0 overflow-hidden rounded-2xl [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                >
+                  <img
+                    src={card.image}
+                    alt={card.name}
+                    className="h-full w-full object-cover"
+                  />
+                  {card.isMatched && (
+                    <motion.div
+                      className="absolute inset-0 flex items-center justify-center bg-emerald-500/80"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <span className="text-4xl">✓</span>
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             </motion.button>
           ))}
