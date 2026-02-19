@@ -29,7 +29,7 @@ Memory preservation app for people with cognitive decline.
 | Activities | `/activities` | 🔲 | |
 | Schedule | `/schedule` | 🔲 | |
 | Settings | `/settings` | 🔲 | |
-| Login | `/login` | ⚠️ | Google OAuth button exists but NOT wired up |
+| Login | `/login` | ✅ | Google OAuth wired up (needs Supabase config) |
 | Signup | `/signup` | 🔲 | |
 
 ### Patient Portal (14 pages)
@@ -52,17 +52,18 @@ Memory preservation app for people with cognitive decline.
 ## 🚨 KNOWN ISSUES
 
 ### Critical
-1. **Google OAuth not functional** - Button exists on `/login` but no handler
-   - [ ] Set up Google OAuth in Supabase dashboard
-   - [ ] Implement `signInWithOAuth` handler
+1. **Google OAuth** - ✅ CODE COMPLETE (needs Supabase config)
+   - [x] Implement `signInWithOAuth` handler
+   - [x] Create /auth/callback route
+   - [ ] Set up Google OAuth in Supabase dashboard (Nick's action)
    - [ ] Test sign-in flow end-to-end
 
-2. **Memory Match Game** - Reported as not fully working
-   - [ ] Test game on live site
-   - [ ] Verify card flip works
-   - [ ] Verify matching logic works
-   - [ ] Verify win condition triggers
-   - [ ] Test all difficulty levels
+2. **Memory Match Game** - ✅ FIXED
+   - [x] Test game on live site
+   - [x] Verify card flip works
+   - [x] Verify matching logic works
+   - [x] Verify win condition triggers
+   - [x] Test all difficulty levels (2x2, 3x2, 4x3)
 
 ### To Verify
 3. **Supabase Connection**
@@ -173,17 +174,22 @@ Memory preservation app for people with cognitive decline.
 
 | Category | Done | Total | % |
 |----------|------|-------|---|
-| Auth | 0 | 6 | 0% |
+| Auth | 2 | 6 | 33% |
 | Caregiver | 0 | 4 | 0% |
 | Memories | 0 | 5 | 0% |
 | Family | 0 | 5 | 0% |
 | Patient Home | 0 | 5 | 0% |
 | Patient Memories | 0 | 4 | 0% |
 | Patient Family | 0 | 4 | 0% |
-| Patient Games | 0 | 3 | 0% |
+| Patient Games | 3 | 3 | 100% |
 | Patient Calm | 0 | 2 | 0% |
 | Patient Mood | 0 | 2 | 0% |
-| **TOTAL** | **0** | **40** | **0%** |
+| **TOTAL** | **5** | **40** | **13%** |
+
+## ✅ FIXES COMPLETED (Feb 19, 2026)
+
+1. **Memory Match Game** - Fixed CSS 3D transforms for card flip
+2. **Google OAuth** - Wired up handler and callback route
 
 ---
 
