@@ -237,6 +237,10 @@ export default function MemoriesPage() {
           onSave={() => {
             setShowAddModal(false);
             setEditingMemory(null);
+            // Reset filter to 'all' when adding new memory so it's visible
+            if (!editingMemory) {
+              setFilter('all');
+            }
             fetchMemories();
           }}
         />
