@@ -1,0 +1,21 @@
+{
+  "name": "evermind",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cognitive support & memory preservation platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run dev --workspace=apps/mobile",
+    "portal": "npm run dev --workspace=apps/portal",
+    "mobile:web": "npm run web --workspace=apps/mobile",
+    "build:portal": "npm run build --workspace=apps/portal",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
