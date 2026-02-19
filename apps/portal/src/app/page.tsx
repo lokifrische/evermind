@@ -1,10 +1,193 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DashboardLayout, StatCard, ActivityFeed, QuickActions, PageWrapper } from "@/components";
+import { useAuth } from "@/contexts/AuthContext";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { smoothTransition } from "@/lib/animations";
 
+const DEMO_CARE_CIRCLE_ID = process.env.NEXT_PUBLIC_DEMO_CARE_CIRCLE_ID || '11111111-1111-1111-1111-111111111111';
+
+interface Stats {
+  memoriesViewed: number;
+  familyConnections: number;
+  activitiesCompleted: number;
+  routinesCompleted: number;
+}
+
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  time: string;
+  type: 'visit' | 'routine' | 'memory';
+  icon: React.ReactNode;
+}
+
+interface PatientInfo {
+  name: string;
+  lastActive: string | null;
+  isActive: boolean;
+}
+
 export default function Dashboard() {
+  const { profile, careCircleId } = useAuth();
+  const [stats, setStats] = useState<Stats>({ memoriesViewed: 0, familyConnections: 0, activitiesCompleted: 0, routinesCompleted: 0 });
+  const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
+  const [patient, setPatient] = useState<PatientInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const activeCareCircleId = careCircleId || DEMO_CARE_CIRCLE_ID;
+  const userName = profile?.full_name?.split(' ')[0] || 'there';
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      const supabase = getSupabaseClient();
+
+      // Fetch patient info
+      const { data: patientData } = await supabase
+        .from('patients')
+        .select('preferred_name')
+        .eq('care_circle_id', activeCareCircleId)
+        .single();
+
+      // Fetch recent activity stats (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      const { data: activityData } = await supabase
+        .from('activity_log')
+        .select('activity_type, created_at')
+        .eq('care_circle_id', activeCareCircleId)
+        .gte('created_at', weekAgo.toISOString());
+
+      // Calculate stats
+      const memoriesViewed = activityData?.filter(a => a.activity_type === 'memory_viewed').length || 0;
+      const familyConnections = activityData?.filter(a => 
+        a.activity_type === 'family_viewed' || a.activity_type === 'call_made'
+      ).length || 0;
+      const activitiesCompleted = activityData?.filter(a => 
+        a.activity_type === 'routine_completed'
+      ).length || 0;
+
+      setStats({
+        memoriesViewed,
+        familyConnections,
+        activitiesCompleted,
+        routinesCompleted: activitiesCompleted,
+      });
+
+      // Fetch upcoming visits
+      const { data: visitsData } = await supabase
+        .from('scheduled_visits')
+        .select('id, visitor_name, scheduled_at')
+        .eq('care_circle_id', activeCareCircleId)
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true })
+        .limit(3);
+
+      // Fetch today's routines
+      const { data: routinesData } = await supabase
+        .from('daily_routines')
+        .select('id, title, time, icon')
+        .eq('care_circle_id', activeCareCircleId)
+        .order('time', { ascending: true })
+        .limit(3);
+
+      const upcomingEvents: UpcomingEvent[] = [];
+
+      // Add visits
+      visitsData?.forEach(visit => {
+        const date = new Date(visit.scheduled_at);
+        const isToday = date.toDateString() === new Date().toDateString();
+        const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString();
+        
+        let timeStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        if (isToday) timeStr = `Today at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+        if (isTomorrow) timeStr = `Tomorrow at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+
+        upcomingEvents.push({
+          id: visit.id,
+          title: `Visit from ${visit.visitor_name}`,
+          time: timeStr,
+          type: 'visit',
+          icon: (
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+          ),
+        });
+      });
+
+      // Add routines for today
+      const today = new Date().getDay();
+      routinesData?.filter(r => {
+        // This is simplified - in real app, filter by days_of_week
+        return true;
+      }).forEach(routine => {
+        const [hours, minutes] = routine.time.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+
+        upcomingEvents.push({
+          id: routine.id,
+          title: routine.title,
+          time: `Today at ${displayHour}:${minutes} ${ampm}`,
+          type: 'routine',
+          icon: (
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 text-xl">
+              {routine.icon || '📋'}
+            </div>
+          ),
+        });
+      });
+
+      setUpcoming(upcomingEvents.slice(0, 5));
+
+      // Check if patient is active (activity in last 30 minutes)
+      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const { data: recentActivity } = await supabase
+        .from('activity_log')
+        .select('created_at')
+        .eq('care_circle_id', activeCareCircleId)
+        .gte('created_at', thirtyMinsAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      setPatient({
+        name: patientData?.preferred_name || 'the patient',
+        lastActive: recentActivity?.[0]?.created_at || null,
+        isActive: (recentActivity?.length || 0) > 0,
+      });
+
+      setLoading(false);
+    };
+
+    fetchDashboardData();
+  }, [activeCareCircleId]);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const getTimeAgo = (dateStr: string | null) => {
+    if (!dateStr) return 'No recent activity';
+    const now = new Date();
+    const then = new Date(dateStr);
+    const mins = Math.floor((now.getTime() - then.getTime()) / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
   return (
     <DashboardLayout>
       <PageWrapper>
@@ -15,9 +198,9 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={smoothTransition}
         >
-          <h1 className="text-2xl font-semibold tracking-tight">Good morning, Sarah</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{getGreeting()}, {userName}</h1>
           <p className="mt-1 text-[var(--muted-foreground)]">
-            Here&apos;s how Margaret is doing today
+            Here&apos;s how {patient?.name || 'your loved one'} is doing
           </p>
         </motion.div>
 
@@ -39,9 +222,8 @@ export default function Dashboard() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Memories Viewed"
-              value={24}
-              subtitle="12 stories, 8 slideshows"
-              trend={{ value: 18, isPositive: true }}
+              value={loading ? '-' : stats.memoriesViewed}
+              subtitle={stats.memoriesViewed === 0 ? 'No activity yet' : 'photos and stories'}
               delay={0.1}
               icon={
                 <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -51,9 +233,8 @@ export default function Dashboard() {
             />
             <StatCard
               title="Family Connections"
-              value={8}
-              subtitle="5 calls, 3 messages"
-              trend={{ value: 25, isPositive: true }}
+              value={loading ? '-' : stats.familyConnections}
+              subtitle={stats.familyConnections === 0 ? 'No connections yet' : 'calls and views'}
               delay={0.15}
               icon={
                 <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -62,25 +243,24 @@ export default function Dashboard() {
               }
             />
             <StatCard
-              title="Activities Completed"
-              value={15}
-              subtitle="Avg. 92% accuracy"
-              trend={{ value: 10, isPositive: true }}
+              title="Routines Completed"
+              value={loading ? '-' : stats.routinesCompleted}
+              subtitle={stats.routinesCompleted === 0 ? 'No completions yet' : 'this week'}
               delay={0.2}
               icon={
                 <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.39 48.39 0 01-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 01-.658.663v0c-.355 0-.676-.186-.959-.401a1.647 1.647 0 00-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401v0c.31 0 .555.26.532.57a48.039 48.039 0 01-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 00.657-.643v0c0-.355-.186-.676-.401-.959a1.647 1.647 0 01-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.4.604-.4.959v0c0 .333.277.599.61.58a48.1 48.1 0 005.427-.63 48.05 48.05 0 00.582-4.717.532.532 0 00-.533-.57v0c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.035 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.959.401v0a.656.656 0 00.659-.663 47.703 47.703 0 00-.31-4.82 47.642 47.642 0 01-4.163.3.64.64 0 01-.657-.643v0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
             />
             <StatCard
-              title="Screen Time"
-              value="2.4h"
-              subtitle="Daily average"
+              title="Total Memories"
+              value={loading ? '-' : stats.memoriesViewed > 0 ? '5+' : '0'}
+              subtitle="in the collection"
               delay={0.25}
               icon={
                 <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                 </svg>
               }
             />
@@ -104,84 +284,75 @@ export default function Dashboard() {
               <div className="border-b border-[var(--border)] px-6 py-4">
                 <h3 className="text-lg font-semibold">Upcoming</h3>
               </div>
-              <div className="divide-y divide-[var(--border)]">
-                <motion.div 
-                  className="px-6 py-4 hover:bg-[var(--muted)]/50 transition-colors cursor-pointer"
-                  whileHover={{ x: 4 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">Call with David</p>
-                      <p className="text-sm text-[var(--muted-foreground)]">Today at 3:00 PM</p>
-                    </div>
-                  </div>
-                </motion.div>
-                <motion.div 
-                  className="px-6 py-4 hover:bg-[var(--muted)]/50 transition-colors cursor-pointer"
-                  whileHover={{ x: 4 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">&quot;This Day&quot; Memory</p>
-                      <p className="text-sm text-[var(--muted-foreground)]">Tomorrow, 10:00 AM</p>
-                    </div>
-                  </div>
-                </motion.div>
-                <motion.div 
-                  className="px-6 py-4 hover:bg-[var(--muted)]/50 transition-colors cursor-pointer"
-                  whileHover={{ x: 4 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium">Weekly Progress Report</p>
-                      <p className="text-sm text-[var(--muted-foreground)]">Friday, 9:00 AM</p>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+              {upcoming.length === 0 ? (
+                <div className="p-6 text-center text-sm text-[var(--muted-foreground)]">
+                  No upcoming events
+                </div>
+              ) : (
+                <div className="divide-y divide-[var(--border)]">
+                  {upcoming.map((event) => (
+                    <motion.div 
+                      key={event.id}
+                      className="px-6 py-4 hover:bg-[var(--muted)]/50 transition-colors cursor-pointer"
+                      whileHover={{ x: 4 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        {event.icon}
+                        <div>
+                          <p className="font-medium">{event.title}</p>
+                          <p className="text-sm text-[var(--muted-foreground)]">{event.time}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Status Card */}
-            <motion.div 
-              className="mt-4 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 dark:border-emerald-900 dark:from-emerald-950/50 dark:to-teal-950/50"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, type: "spring" }}
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center gap-3">
-                <motion.div 
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500"
-                  animate={{ 
-                    boxShadow: ["0 0 0 0 rgba(34, 197, 94, 0.4)", "0 0 0 10px rgba(34, 197, 94, 0)", "0 0 0 0 rgba(34, 197, 94, 0)"]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </motion.div>
-                <div>
-                  <p className="font-medium text-emerald-900 dark:text-emerald-100">Margaret is active</p>
-                  <p className="text-sm text-emerald-700 dark:text-emerald-300">Last activity 12 min ago</p>
+            {patient && (
+              <motion.div 
+                className={`mt-4 rounded-xl border p-4 ${
+                  patient.isActive
+                    ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 dark:border-emerald-900 dark:from-emerald-950/50 dark:to-teal-950/50'
+                    : 'border-[var(--border)] bg-[var(--card)]'
+                }`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, type: "spring" }}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-center gap-3">
+                  {patient.isActive ? (
+                    <motion.div 
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500"
+                      animate={{ 
+                        boxShadow: ["0 0 0 0 rgba(34, 197, 94, 0.4)", "0 0 0 10px rgba(34, 197, 94, 0)", "0 0 0 0 rgba(34, 197, 94, 0)"]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    </motion.div>
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--muted)]">
+                      <svg className="h-5 w-5 text-[var(--muted-foreground)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div>
+                    <p className={`font-medium ${patient.isActive ? 'text-emerald-900 dark:text-emerald-100' : ''}`}>
+                      {patient.isActive ? `${patient.name} is active` : `${patient.name} is inactive`}
+                    </p>
+                    <p className={`text-sm ${patient.isActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--muted-foreground)]'}`}>
+                      {patient.lastActive ? `Last activity ${getTimeAgo(patient.lastActive)}` : 'No recent activity'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </PageWrapper>
