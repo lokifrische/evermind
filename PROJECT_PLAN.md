@@ -42,7 +42,7 @@ Memory preservation app for people with cognitive decline.
 | Family | `/patient/family` | 🔲 | |
 | Video Call | `/patient/family/call` | 🔲 | |
 | Games Index | `/patient/games` | 🔲 | |
-| Memory Match | `/patient/games/memory-match` | ⚠️ | Nick said didn't fully work |
+| Memory Match | `/patient/games/memory-match` | ✅ | FIXED - Card flip, matching, win modal all working |
 | Talk to Me | `/patient/talk` | 🔲 | |
 | Calm Mode | `/patient/calm` | 🔲 | |
 | Mood Check-in | `/patient/mood` | 🔲 | |
