@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+  badge?: number;
+}
+
+const navigation: NavItem[] = [
   {
     name: "Dashboard",
     href: "/",
@@ -21,6 +28,7 @@ const navigation = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
       </svg>
     ),
+    badge: 3,
   },
   {
     name: "Family",
@@ -30,6 +38,7 @@ const navigation = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
       </svg>
     ),
+    badge: 2,
   },
   {
     name: "Activities",
@@ -68,7 +77,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r border-[var(--border)] bg-[var(--card)]">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-[var(--border)] px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25">
           <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
           </svg>
@@ -79,9 +88,8 @@ export function Sidebar() {
       {/* Search */}
       <div className="px-3 pt-4 pb-2">
         <button 
-          className="flex w-full items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/50 px-3 py-2 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          className="flex w-full items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/50 px-3 py-2 text-sm text-[var(--muted-foreground)] transition-all hover:bg-[var(--muted)] hover:text-[var(--foreground)] hover:shadow-sm"
           onClick={() => {
-            // Dispatch keyboard event to open command palette
             window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
           }}
         >
@@ -101,14 +109,26 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-[var(--primary)] text-white"
+                  ? "bg-[var(--primary)] text-white shadow-md shadow-indigo-500/25"
                   : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              {item.icon}
-              {item.name}
+              <span className={`transition-transform group-hover:scale-110 ${isActive ? "" : ""}`}>
+                {item.icon}
+              </span>
+              <span className="flex-1">{item.name}</span>
+              {item.badge && !isActive && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--primary)] px-1.5 text-xs font-medium text-white">
+                  {item.badge}
+                </span>
+              )}
+              {item.badge && isActive && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/20 px-1.5 text-xs font-medium text-white">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -116,14 +136,20 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="border-t border-[var(--border)] p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500">
-            <span className="text-sm font-medium text-white">MG</span>
+        <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--muted)] cursor-pointer">
+          <div className="relative">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-md">
+              <span className="text-sm font-medium text-white">MG</span>
+            </div>
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[var(--card)] bg-emerald-500" />
           </div>
           <div className="flex-1 truncate">
             <p className="text-sm font-medium">Margaret&apos;s Care Team</p>
             <p className="text-xs text-[var(--muted-foreground)]">Primary Caregiver</p>
           </div>
+          <svg className="h-4 w-4 text-[var(--muted-foreground)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+          </svg>
         </div>
       </div>
     </aside>
