@@ -17,6 +17,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ViewStyle,
+  TextStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccessibility } from '../../contexts/AccessibilityContext';
@@ -32,7 +33,7 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   onRightIconPress?: () => void;
   showClearButton?: boolean;
   style?: ViewStyle;
-  inputStyle?: ViewStyle;
+  inputStyle?: TextStyle;
 }
 
 export const Input = forwardRef<TextInput, InputProps>(({

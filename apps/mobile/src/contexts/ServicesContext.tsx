@@ -6,24 +6,27 @@
  * providers without changing application code.
  * 
  * Usage:
- *   const { tts, assistant } = useServices();
+ *   const { tts, speech, assistant } = useServices();
  *   await tts.speak("Hello!");
+ *   await speech.startListening();
  *   const response = await assistant.chat("Hi", context);
  */
 
 import React, { createContext, useContext, useMemo, ReactNode } from 'react';
-import { ITTSService, IAssistantService } from '../services/interfaces';
-import { mockTTSService, mockAssistantService } from '../services/providers';
+import { ITTSService, IAssistantService, ISpeechService } from '../services/interfaces';
+import { mockTTSService, mockAssistantService, expoSpeechService } from '../services/providers';
 
 interface ServicesContextValue {
   /** Text-to-Speech service */
   tts: ITTSService;
   
+  /** Speech-to-Text service */
+  speech: ISpeechService;
+  
   /** AI Assistant service */
   assistant: IAssistantService;
   
   // Future services (uncomment when implemented):
-  // speech: ISpeechService;
   // video: IVideoService;
   // storage: IStorageService;
 }
@@ -34,18 +37,21 @@ interface ServicesProviderProps {
   children: ReactNode;
   // Allow overriding providers for testing or production
   tts?: ITTSService;
+  speech?: ISpeechService;
   assistant?: IAssistantService;
 }
 
 export function ServicesProvider({
   children,
   tts = mockTTSService,
+  speech = expoSpeechService,
   assistant = mockAssistantService,
 }: ServicesProviderProps) {
   const value = useMemo<ServicesContextValue>(() => ({
     tts,
+    speech,
     assistant,
-  }), [tts, assistant]);
+  }), [tts, speech, assistant]);
 
   return (
     <ServicesContext.Provider value={value}>
@@ -65,6 +71,10 @@ export function useServices(): ServicesContextValue {
 // Convenience hooks for individual services
 export function useTTS(): ITTSService {
   return useServices().tts;
+}
+
+export function useSpeech(): ISpeechService {
+  return useServices().speech;
 }
 
 export function useAssistant(): IAssistantService {

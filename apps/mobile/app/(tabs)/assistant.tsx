@@ -23,75 +23,131 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Screen } from '../../src/components/layout/Screen';
 import { Text } from '../../src/components/ui/Text';
-import { Card } from '../../src/components/ui/Card';
 import { useAccessibility } from '../../src/contexts/AccessibilityContext';
+import { useData } from '../../src/contexts/DataContext';
+import { useAssistant, useTTS, useSpeech } from '../../src/contexts/ServicesContext';
+import { AssistantMessage, AssistantContext } from '../../src/services/interfaces';
 import { colors, spacing, MIN_TOUCH_TARGET, borderRadius } from '../../src/constants/theme';
 
-type MessageRole = 'user' | 'assistant';
 type AssistantState = 'idle' | 'listening' | 'processing' | 'speaking';
 
 interface Message {
   id: string;
-  role: MessageRole;
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
 
-// Mock responses for the assistant
-const mockResponses: Record<string, string> = {
-  default: "I'm here to help you, dear. What would you like to do today?",
-  greeting: "Hello! It's wonderful to talk with you. How are you feeling today?",
-  time: `It's ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} right now.`,
-  date: `Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.`,
-  confused: "That's okay, dear. You're at home and safe. Would you like to look at some photos of your family?",
-  help: "I can help you look at memories, call your family, play games, or just chat. What sounds nice?",
-};
-
-function getAssistantResponse(input: string): string {
-  const lowerInput = input.toLowerCase();
-  
-  if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-    return mockResponses.greeting;
-  }
-  if (lowerInput.includes('time')) {
-    return mockResponses.time;
-  }
-  if (lowerInput.includes('date') || lowerInput.includes('day')) {
-    return mockResponses.date;
-  }
-  if (lowerInput.includes('confused') || lowerInput.includes('where am i') || lowerInput.includes('lost')) {
-    return mockResponses.confused;
-  }
-  if (lowerInput.includes('help') || lowerInput.includes('what can you do')) {
-    return mockResponses.help;
-  }
-  
-  return mockResponses.default;
+function getTimeOfDay(): 'morning' | 'afternoon' | 'evening' | 'night' {
+  const hour = new Date().getHours();
+  if (hour < 6) return 'night';
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  if (hour < 21) return 'evening';
+  return 'night';
 }
 
 const quickActions = [
   { id: 'call', label: 'Call Family', icon: 'videocam' },
   { id: 'memories', label: 'Show Memories', icon: 'images' },
   { id: 'time', label: "What Time Is It?", icon: 'time' },
-  { id: 'date', label: "What Day Is It?", icon: 'calendar' },
+  { id: 'calm', label: "Help Me Relax", icon: 'leaf' },
 ];
 
 export default function AssistantScreen() {
+  const router = useRouter();
   const { themeColors, triggerHaptic, scaledFontSize } = useAccessibility();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Hello! I'm here to help you. You can talk to me or tap a button below. What would you like to do?",
-      timestamp: new Date(),
-    },
-  ]);
+  const { user } = useData();
+  const assistant = useAssistant();
+  const tts = useTTS();
+  const speech = useSpeech();
+  
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [inputText, setInputText] = useState('');
   const [assistantState, setAssistantState] = useState<AssistantState>('idle');
+  const [interimTranscript, setInterimTranscript] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Build assistant context
+  const getContext = (): AssistantContext => ({
+    patientName: user.preferredName || user.name,
+    timeOfDay: getTimeOfDay(),
+  });
+
+  // Initialize with greeting
+  useEffect(() => {
+    initializeAssistant();
+  }, []);
+
+  // Set up speech recognition event handlers
+  useEffect(() => {
+    // Handle speech results
+    const unsubResult = speech.onResult((result) => {
+      if (result.isFinal) {
+        // Final result - send as message
+        setInterimTranscript('');
+        if (result.transcript.trim()) {
+          sendMessage(result.transcript.trim());
+        }
+        setAssistantState('idle');
+      } else {
+        // Interim result - show as preview
+        setInterimTranscript(result.transcript);
+      }
+    });
+
+    // Handle speech errors
+    const unsubError = speech.onError((error) => {
+      console.error('Speech recognition error:', error.message);
+      setInterimTranscript('');
+      setAssistantState('idle');
+      // Don't show error for common cases like no speech detected
+      if (!error.message.includes('no-speech') && !error.message.includes('aborted')) {
+        triggerHaptic('error');
+      }
+    });
+
+    // Handle state changes
+    const unsubState = speech.onStateChange((isListening) => {
+      if (!isListening && assistantState === 'listening') {
+        // Speech recognition stopped
+        setInterimTranscript('');
+      }
+    });
+
+    return () => {
+      unsubResult();
+      unsubError();
+      unsubState();
+    };
+  }, [speech, assistantState]);
+
+  const initializeAssistant = async () => {
+    const context = getContext();
+    const suggestionList = await assistant.getSuggestions(context);
+    setSuggestions(suggestionList);
+
+    // Add initial greeting
+    const greeting = getTimeOfDay() === 'morning' 
+      ? `Good morning, ${context.patientName}! How can I help you today?`
+      : getTimeOfDay() === 'afternoon'
+      ? `Good afternoon, ${context.patientName}! What would you like to do?`
+      : getTimeOfDay() === 'evening'
+      ? `Good evening, ${context.patientName}! Is there anything I can help with?`
+      : `Hello, ${context.patientName}. I'm here if you need anything.`;
+
+    setMessages([{
+      id: '1',
+      role: 'assistant',
+      content: greeting,
+      timestamp: new Date(),
+    }]);
+  };
 
   // Pulse animation for listening state
   useEffect(() => {
@@ -115,7 +171,7 @@ export default function AssistantScreen() {
     }
   }, [assistantState]);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     triggerHaptic('light');
@@ -130,33 +186,71 @@ export default function AssistantScreen() {
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
 
-    // Simulate processing
+    // Get assistant response
     setAssistantState('processing');
-    setTimeout(() => {
+    try {
+      const context = getContext();
+      const history: AssistantMessage[] = messages.map(m => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+      }));
+
+      const response = await assistant.chat(text, context, history);
+
       // Add assistant response
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: getAssistantResponse(text),
+        content: response.message,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Update suggestions if provided
+      if (response.suggestions) {
+        setSuggestions(response.suggestions);
+      }
+
+      // Speak the response
+      setAssistantState('speaking');
+      await tts.speak(response.message, { rate: 0.9 });
       setAssistantState('idle');
-    }, 1000);
+
+    } catch (error) {
+      console.error('Assistant error:', error);
+      setAssistantState('idle');
+    }
   };
 
-  const handleMicPress = () => {
+  const handleMicPress = async () => {
     triggerHaptic('medium');
+    
     if (assistantState === 'listening') {
+      // Stop listening
+      try {
+        await speech.stopListening();
+      } catch (error) {
+        console.error('Error stopping speech:', error);
+      }
       setAssistantState('idle');
+      setInterimTranscript('');
     } else {
+      // Start listening
       setAssistantState('listening');
-      // In a real app, this would start speech recognition
-      // For mock, simulate hearing something after 3 seconds
-      setTimeout(() => {
-        sendMessage("Hello");
+      setInterimTranscript('');
+      
+      try {
+        await speech.startListening({
+          language: 'en-US',
+          interimResults: true,
+          continuous: false,
+        });
+      } catch (error) {
+        console.error('Error starting speech:', error);
         setAssistantState('idle');
-      }, 3000);
+        triggerHaptic('error');
+      }
     }
   };
 
@@ -164,18 +258,61 @@ export default function AssistantScreen() {
     triggerHaptic('medium');
     switch (actionId) {
       case 'time':
-        sendMessage("What time is it?");
-        break;
-      case 'date':
-        sendMessage("What day is it?");
+        const timeStr = new Date().toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        const response = `It's ${timeStr} right now.`;
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: response,
+          timestamp: new Date(),
+        }]);
+        tts.speak(response);
         break;
       case 'call':
-        sendMessage("I want to call my family");
+        router.push('/(tabs)/family');
         break;
       case 'memories':
-        sendMessage("Show me some memories");
+        router.push('/(tabs)/memories');
+        break;
+      case 'calm':
+        handleGrounding();
         break;
     }
+  };
+
+  const handleGrounding = async () => {
+    setAssistantState('processing');
+    try {
+      const context = getContext();
+      const response = await assistant.getGroundingResponse(context);
+      
+      const groundingMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: response.message,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, groundingMessage]);
+
+      if (response.suggestions) {
+        setSuggestions(response.suggestions);
+      }
+
+      setAssistantState('speaking');
+      await tts.speak(response.message, { rate: 0.85 });
+      setAssistantState('idle');
+    } catch (error) {
+      console.error('Grounding error:', error);
+      setAssistantState('idle');
+    }
+  };
+
+  const handleSuggestionPress = (suggestion: string) => {
+    sendMessage(suggestion);
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
@@ -224,6 +361,26 @@ export default function AssistantScreen() {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
         />
 
+        {/* Suggestions */}
+        {suggestions.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            {suggestions.slice(0, 4).map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleSuggestionPress(suggestion)}
+                style={styles.suggestionChip}
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={suggestion}
+              >
+                <Text variant="body" color={colors.assistant.main}>
+                  {suggestion}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
           {quickActions.map((action) => (
@@ -265,14 +422,16 @@ export default function AssistantScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Status Text */}
+          {/* Status Text / Interim Transcript */}
           <Text
             variant="body"
-            color={themeColors.textSecondary}
+            color={interimTranscript ? themeColors.text : themeColors.textSecondary}
             center
             style={styles.statusText}
           >
-            {assistantState === 'listening' && 'Listening...'}
+            {assistantState === 'listening' && interimTranscript 
+              ? `"${interimTranscript}"`
+              : assistantState === 'listening' && 'Listening...'}
             {assistantState === 'processing' && 'Thinking...'}
             {assistantState === 'speaking' && 'Speaking...'}
             {assistantState === 'idle' && 'Tap the microphone to talk'}
@@ -359,6 +518,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[100],
     borderBottomLeftRadius: 4,
   },
+  suggestionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  suggestionChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.assistant.light,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.assistant.main,
+  },
   quickActionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -371,9 +545,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.assistant.light,
+    backgroundColor: colors.white,
     borderRadius: 20,
     minHeight: MIN_TOUCH_TARGET - 16,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
   },
   inputContainer: {
     padding: spacing.lg,

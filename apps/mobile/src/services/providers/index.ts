@@ -7,3 +7,4 @@
 
 export { mockTTSService } from './MockTTSService';
 export { mockAssistantService } from './MockAssistantService';
+export { expoSpeechService } from './ExpoSpeechService';

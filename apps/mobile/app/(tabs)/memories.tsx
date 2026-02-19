@@ -106,7 +106,7 @@ export default function MemoriesScreen() {
 
   const handleRecordPress = () => {
     triggerHaptic('medium');
-    // Navigate to recording screen
+    router.push('/memories/record');
   };
 
   const renderMemoryCard = ({ item }: { item: typeof fallbackMemories[0] }) => (

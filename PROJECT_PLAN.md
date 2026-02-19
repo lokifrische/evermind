@@ -80,7 +80,7 @@ Three interfaces, one backend:
 
 | Service | Interface | Mock Provider | Paid Provider (Future) | Status |
 |---------|-----------|---------------|------------------------|--------|
-| Speech-to-Text | `SpeechService` | Native RN Voice | Deepgram/Whisper | ⬜ TODO |
+| Speech-to-Text | `SpeechService` | expo-speech-recognition | Deepgram/Whisper | ✅ DONE |
 | Text-to-Speech | `TTSService` | Expo Speech | ElevenLabs | ✅ DONE |
 | AI Assistant | `AssistantService` | Canned responses | OpenAI/Claude | ✅ DONE |
 | Video Calling | `VideoService` | P2P WebRTC | Daily.co/LiveKit | ⬜ TODO |
@@ -139,13 +139,15 @@ Three interfaces, one backend:
 **DONE criteria:** Smooth transitions, audio works, controls appear on tap
 
 #### 2.2.4 Story Recording
-- [ ] Large microphone button
-- [ ] Visual waveform
-- [ ] No visible timer
-- [ ] Gentle prompts on silence
+- [x] Large microphone button ✅
+- [x] Visual waveform (amplitude feedback) ✅
+- [x] No visible timer (subtle duration shown) ✅
+- [x] Gentle prompts on silence ✅
 - [ ] Auto-stop after extended silence
-- [ ] Confirmation screen
+- [x] Confirmation screen ✅
 - [ ] Speech-to-text transcription
+- [x] Story prompts for inspiration ✅
+- [x] useAudioRecorder hook (expo-av) ✅
 
 **DONE criteria:** Recording works, transcription appears, saved to database
 

@@ -66,7 +66,7 @@ interface ToastItemProps {
 }
 
 function ToastItem({ toast, onHide }: ToastItemProps) {
-  const { themeColors, triggerHaptic, prefersReducedMotion } = useAccessibility();
+  const { themeColors, triggerHaptic, reducedMotion } = useAccessibility();
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const config = typeConfig[toast.type];
@@ -79,7 +79,7 @@ function ToastItem({ toast, onHide }: ToastItemProps) {
     triggerHaptic(toast.type === 'success' ? 'success' : 'warning');
 
     // Animate in
-    if (prefersReducedMotion) {
+    if (reducedMotion) {
       translateY.setValue(0);
       opacity.setValue(1);
     } else {
@@ -100,7 +100,7 @@ function ToastItem({ toast, onHide }: ToastItemProps) {
 
     // Auto-dismiss
     const timer = setTimeout(() => {
-      if (prefersReducedMotion) {
+      if (reducedMotion) {
         onHide();
       } else {
         Animated.parallel([

@@ -39,7 +39,7 @@ export interface ModalProps {
   primaryAction?: {
     label: string;
     onPress: () => void;
-    variant?: 'primary' | 'secondary' | 'danger';
+    variant?: 'primary' | 'secondary' | 'outline';
   };
   secondaryAction?: {
     label: string;
@@ -80,7 +80,7 @@ export function Modal({
       );
       
       // Animate in
-      if (prefersReducedMotion) {
+      if (reducedMotion) {
         fadeAnim.setValue(1);
         slideAnim.setValue(0);
       } else {
@@ -110,7 +110,7 @@ export function Modal({
       }, 100);
     } else {
       // Animate out
-      if (prefersReducedMotion) {
+      if (reducedMotion) {
         fadeAnim.setValue(0);
         slideAnim.setValue(SCREEN_HEIGHT);
       } else {
@@ -128,7 +128,7 @@ export function Modal({
         ]).start();
       }
     }
-  }, [visible, prefersReducedMotion, title]);
+  }, [visible, reducedMotion, title]);
 
   const handleClose = () => {
     triggerHaptic('light');
