@@ -170,7 +170,7 @@ export default function GamesScreen() {
   );
 
   return (
-    <Screen title="Games" showMic padded={false}>
+    <Screen title="Games" showMic padded={false} scrollable={false}>
       <FlatList
         data={[{ type: 'daily' }, { type: 'games' }]}
         keyExtractor={(item) => item.type}

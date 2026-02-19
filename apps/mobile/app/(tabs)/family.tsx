@@ -240,7 +240,7 @@ export default function FamilyScreen() {
   );
 
   return (
-    <Screen title="Family" showMic padded={false}>
+    <Screen title="Family" showMic padded={false} scrollable={false}>
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
         {[

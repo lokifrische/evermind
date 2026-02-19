@@ -112,7 +112,7 @@ export default function FamilyMemberScreen() {
   );
 
   return (
-    <Screen showBack showMic={false} padded={false}>
+    <Screen showBack showMic={false} padded={false} scrollable={false}>
       {/* Profile Header */}
       <View style={styles.header}>
         <Image source={{ uri: mockFamilyMember.photoUrl }} style={styles.profilePhoto} />

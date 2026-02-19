@@ -144,7 +144,7 @@ export default function MemoriesScreen() {
   );
 
   return (
-    <Screen title="Memories" showMic padded={false}>
+    <Screen title="Memories" showMic padded={false} scrollable={false}>
       {/* Filter Buttons */}
       <View style={styles.filterContainer}>
         <FlatList
