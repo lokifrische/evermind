@@ -2,46 +2,130 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+
+// Types
+interface FamilyMember {
+  id: string;
+  name: string;
+  relationship: string;
+  photo: string;
+  hasNewMessage: boolean;
+}
+
+interface DailyHighlight {
+  type: "memory" | "message" | "prompt";
+  title: string;
+  subtitle: string;
+  action: string;
+  href: string;
+  icon: string;
+}
 
 // Mock data - in production this comes from Supabase
-const familyMembers = [
+const userData = {
+  name: "Margaret",
+  preferredName: "Maggie",
+  photo: "https://images.unsplash.com/photo-1566616213894-2d4e1baee5d8?w=400&h=400&fit=crop",
+};
+
+const familyMembers: FamilyMember[] = [
   {
     id: "1",
     name: "Sarah",
     relationship: "Your Daughter",
-    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=600&fit=crop",
-    voiceMessage: true,
+    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop",
+    hasNewMessage: true,
   },
   {
     id: "2",
     name: "David",
     relationship: "Your Son",
-    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=600&fit=crop",
-    voiceMessage: true,
+    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop",
+    hasNewMessage: true,
   },
   {
     id: "3",
     name: "Emma",
     relationship: "Your Granddaughter",
-    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&h=600&fit=crop",
-    voiceMessage: false,
+    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=300&fit=crop",
+    hasNewMessage: false,
   },
   {
     id: "4",
     name: "Tommy",
     relationship: "Your Grandson",
-    photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&h=600&fit=crop",
-    voiceMessage: true,
+    photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&h=300&fit=crop",
+    hasNewMessage: true,
   },
 ];
 
-const todaySchedule = [
-  { time: "8:00 AM", activity: "Breakfast", icon: "☕", completed: true },
-  { time: "9:00 AM", activity: "Morning Medication", icon: "💊", completed: true },
-  { time: "10:30 AM", activity: "Memory Activity", icon: "🧩", completed: false, current: true },
-  { time: "12:00 PM", activity: "Lunch", icon: "🍽️", completed: false },
-  { time: "3:00 PM", activity: "Video Call with David", icon: "📞", completed: false },
-  { time: "6:00 PM", activity: "Dinner", icon: "🍝", completed: false },
+// Daily highlights - rotating content
+const dailyHighlights: DailyHighlight[] = [
+  {
+    type: "memory",
+    title: "10 years ago today",
+    subtitle: "Sarah's college graduation 🎓",
+    action: "View Memory",
+    href: "/patient/memories?highlight=today",
+    icon: "📅",
+  },
+  {
+    type: "message",
+    title: "New message from David",
+    subtitle: "Sent this morning",
+    action: "Listen Now",
+    href: "/patient/family/messages",
+    icon: "💌",
+  },
+  {
+    type: "prompt",
+    title: "Share a memory",
+    subtitle: "What was your favorite vacation?",
+    action: "Record Story",
+    href: "/patient/memories/record",
+    icon: "🎙️",
+  },
+];
+
+// Main 2x2 grid tiles - fixed positions, fixed colors
+const mainTiles = [
+  {
+    id: "memories",
+    label: "Memories",
+    icon: "📸",
+    href: "/patient/memories",
+    bgGradient: "from-purple-500 to-indigo-600",
+    shadowColor: "shadow-purple-500/30",
+    hasNotification: false,
+  },
+  {
+    id: "family",
+    label: "Family",
+    icon: "👨‍👩‍👧‍👦",
+    href: "/patient/family",
+    bgGradient: "from-pink-500 to-rose-600",
+    shadowColor: "shadow-pink-500/30",
+    hasNotification: true, // New messages
+  },
+  {
+    id: "games",
+    label: "Games",
+    icon: "🧩",
+    href: "/patient/games",
+    bgGradient: "from-amber-500 to-orange-600",
+    shadowColor: "shadow-amber-500/30",
+    hasNotification: false,
+  },
+  {
+    id: "talk",
+    label: "Talk to Me",
+    icon: "💬",
+    href: "/patient/talk",
+    bgGradient: "from-emerald-500 to-teal-600",
+    shadowColor: "shadow-emerald-500/30",
+    hasNotification: false,
+  },
 ];
 
 function getTimeOfDay(): { greeting: string; emoji: string; period: string } {
@@ -56,306 +140,231 @@ function formatDate(): string {
   return new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'long', 
-    day: 'numeric' 
+    day: 'numeric',
+    year: 'numeric'
   });
 }
 
 export default function PatientHomePage() {
-  const [currentFamilyIndex, setCurrentFamilyIndex] = useState(0);
-  const [showSchedule, setShowSchedule] = useState(false);
+  const [currentHighlight, setCurrentHighlight] = useState(0);
   const timeOfDay = getTimeOfDay();
-  const currentFamily = familyMembers[currentFamilyIndex];
 
-  // Rotate family member every 30 seconds when not interacting
+  // Rotate highlights every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentFamilyIndex((prev) => (prev + 1) % familyMembers.length);
-    }, 30000);
+      setCurrentHighlight((prev) => (prev + 1) % dailyHighlights.length);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const nextFamily = () => {
-    setCurrentFamilyIndex((prev) => (prev + 1) % familyMembers.length);
-  };
-
-  const prevFamily = () => {
-    setCurrentFamilyIndex((prev) => (prev - 1 + familyMembers.length) % familyMembers.length);
-  };
+  const highlight = dailyHighlights[currentHighlight];
 
   return (
-    <div className="flex min-h-screen flex-col px-8 py-12">
-      {/* Time & Date - Orientation */}
+    <div className="flex min-h-screen flex-col px-6 py-8 pt-20">
+      {/* Time-of-Day Greeting with Photo */}
       <motion.header 
         className="text-center"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="inline-flex items-center gap-3 rounded-full bg-white/60 px-6 py-3 shadow-sm backdrop-blur-sm dark:bg-slate-800/60">
-          <span className="text-3xl">{timeOfDay.emoji}</span>
-          <div className="text-left">
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{timeOfDay.period}</p>
-            <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">{formatDate()}</p>
-          </div>
-        </div>
+        {/* User Photo */}
+        <motion.div 
+          className="mx-auto mb-4 h-24 w-24 overflow-hidden rounded-full border-4 border-white shadow-xl"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, type: "spring" }}
+        >
+          <img
+            src={userData.photo}
+            alt={userData.name}
+            className="h-full w-full object-cover"
+          />
+        </motion.div>
+
+        {/* Greeting */}
+        <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white md:text-4xl">
+          {timeOfDay.greeting},{" "}
+          <span className="text-sky-600 dark:text-sky-400">{userData.preferredName}</span>
+          <span className="ml-2">{timeOfDay.emoji}</span>
+        </h1>
+
+        {/* Date - Orientation */}
+        <motion.div 
+          className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 shadow-sm backdrop-blur-sm dark:bg-slate-800/70"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <span className="text-lg font-medium text-slate-600 dark:text-slate-300">
+            {formatDate()}
+          </span>
+        </motion.div>
       </motion.header>
 
-      {/* Main Greeting */}
+      {/* Main 2x2 Tile Grid */}
       <motion.div 
-        className="mt-8 text-center"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <h1 className="text-4xl font-bold tracking-tight text-slate-800 dark:text-white md:text-5xl">
-          {timeOfDay.greeting}, <span className="text-sky-600 dark:text-sky-400">Margaret</span>
-        </h1>
-        <p className="mt-3 text-xl text-slate-600 dark:text-slate-300">
-          You are safe and loved. Here&apos;s your family.
-        </p>
-      </motion.div>
-
-      {/* Family Member Card */}
-      <motion.div 
-        className="mx-auto mt-10 w-full max-w-md"
+        className="mx-auto mt-8 grid w-full max-w-sm grid-cols-2 gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
       >
-        <div className="relative">
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevFamily}
-            className="absolute left-0 top-1/2 z-10 -translate-x-4 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-lg transition-transform hover:scale-110 dark:bg-slate-700 dark:text-slate-300"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </button>
-          <button
-            onClick={nextFamily}
-            className="absolute right-0 top-1/2 z-10 translate-x-4 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-lg transition-transform hover:scale-110 dark:bg-slate-700 dark:text-slate-300"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </button>
-
-          {/* Family Card */}
-          <AnimatePresence mode="wait">
+        {mainTiles.map((tile, index) => (
+          <Link key={tile.id} href={tile.href}>
             <motion.div
-              key={currentFamily.id}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-200/50 dark:bg-slate-800 dark:shadow-slate-900/50"
+              className={`relative flex aspect-square flex-col items-center justify-center rounded-3xl bg-gradient-to-br ${tile.bgGradient} p-4 shadow-xl ${tile.shadowColor}`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + index * 0.1 }}
             >
-              {/* Photo */}
-              <div className="relative aspect-square">
-                <img
-                  src={currentFamily.photo}
-                  alt={currentFamily.name}
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
-                {/* Name Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                  <h2 className="text-4xl font-bold">{currentFamily.name}</h2>
-                  <p className="mt-1 text-xl text-white/90">{currentFamily.relationship}</p>
-                </div>
-              </div>
-
-              {/* Voice Message Button */}
-              {currentFamily.voiceMessage && (
-                <div className="p-6">
-                  <motion.button
-                    className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 py-5 text-xl font-semibold text-white shadow-lg shadow-sky-500/30"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-                    </svg>
-                    Hear from {currentFamily.name}
-                  </motion.button>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Dots Indicator */}
-          <div className="mt-6 flex justify-center gap-2">
-            {familyMembers.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentFamilyIndex(index)}
-                className={`h-3 w-3 rounded-full transition-all ${
-                  index === currentFamilyIndex
-                    ? "w-8 bg-sky-500"
-                    : "bg-slate-300 hover:bg-slate-400 dark:bg-slate-600"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Today's Schedule Toggle */}
-      <motion.div 
-        className="mx-auto mt-10 w-full max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-      >
-        <motion.button
-          onClick={() => setShowSchedule(!showSchedule)}
-          className="flex w-full items-center justify-between rounded-2xl bg-white/80 px-6 py-5 shadow-lg backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-2xl dark:bg-amber-900/30">
-              📅
-            </div>
-            <div className="text-left">
-              <p className="text-lg font-semibold text-slate-800 dark:text-white">Today&apos;s Schedule</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {todaySchedule.filter(s => !s.completed).length} activities remaining
-              </p>
-            </div>
-          </div>
-          <motion.div
-            animate={{ rotate: showSchedule ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <svg className="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </motion.div>
-        </motion.button>
-
-        {/* Schedule Dropdown */}
-        <AnimatePresence>
-          {showSchedule && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-4 overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-slate-800"
-            >
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                {todaySchedule.map((item, index) => (
+              {/* Notification Glow */}
+              {tile.hasNotification && (
+                <>
                   <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`flex items-center gap-4 px-6 py-4 ${
-                      item.current
-                        ? "bg-sky-50 dark:bg-sky-900/20"
-                        : item.completed
-                        ? "opacity-50"
-                        : ""
-                    }`}
-                  >
-                    <span className="text-3xl">{item.icon}</span>
-                    <div className="flex-1">
-                      <p className={`text-lg font-medium ${
-                        item.completed 
-                          ? "text-slate-400 line-through dark:text-slate-500" 
-                          : "text-slate-800 dark:text-white"
-                      }`}>
-                        {item.activity}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{item.time}</p>
-                    </div>
-                    {item.completed && (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      </div>
-                    )}
-                    {item.current && (
-                      <span className="rounded-full bg-sky-500 px-3 py-1 text-xs font-bold text-white">
-                        NOW
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
+                    className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-red-500 shadow-lg"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-3xl border-2 border-white/50"
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </>
+              )}
+              
+              <span className="text-6xl drop-shadow-lg">{tile.icon}</span>
+              <span className="mt-3 text-xl font-bold text-white drop-shadow-sm">
+                {tile.label}
+              </span>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </Link>
+        ))}
       </motion.div>
 
-      {/* Quick Actions */}
+      {/* Daily Highlight Strip */}
       <motion.div 
-        className="mx-auto mt-10 grid w-full max-w-md grid-cols-2 gap-4"
+        className="mx-auto mt-8 w-full max-w-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.8 }}
       >
-        <motion.a
-          href="/patient/family"
-          className="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-6 shadow-lg backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-100 to-rose-100 text-4xl dark:from-pink-900/30 dark:to-rose-900/30">
-            👨‍👩‍👧‍👦
-          </div>
-          <span className="text-lg font-semibold text-slate-800 dark:text-white">My Family</span>
-        </motion.a>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentHighlight}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Link href={highlight.href}>
+              <motion.div
+                className="flex items-center gap-4 rounded-2xl bg-white/80 px-5 py-4 shadow-lg backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 text-3xl dark:from-sky-900/30 dark:to-blue-900/30">
+                  {highlight.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-800 dark:text-white truncate">
+                    {highlight.title}
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                    {highlight.subtitle}
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
+                  <span className="rounded-full bg-sky-500 px-3 py-1.5 text-xs font-bold text-white">
+                    {highlight.action}
+                  </span>
+                </div>
+              </motion.div>
+            </Link>
+          </motion.div>
+        </AnimatePresence>
 
-        <motion.a
-          href="/patient/memories"
-          className="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-6 shadow-lg backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 text-4xl dark:from-purple-900/30 dark:to-indigo-900/30">
-            📸
-          </div>
-          <span className="text-lg font-semibold text-slate-800 dark:text-white">Memories</span>
-        </motion.a>
-
-        <motion.a
-          href="/patient/activities"
-          className="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-6 shadow-lg backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 text-4xl dark:from-amber-900/30 dark:to-orange-900/30">
-            🧩
-          </div>
-          <span className="text-lg font-semibold text-slate-800 dark:text-white">Activities</span>
-        </motion.a>
-
-        <motion.button
-          className="flex flex-col items-center gap-3 rounded-2xl bg-white/80 p-6 shadow-lg backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 text-4xl dark:from-emerald-900/30 dark:to-teal-900/30">
-            😊
-          </div>
-          <span className="text-lg font-semibold text-slate-800 dark:text-white">How I Feel</span>
-        </motion.button>
+        {/* Highlight Dots */}
+        <div className="mt-3 flex justify-center gap-2">
+          {dailyHighlights.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentHighlight(index)}
+              className={`h-2 rounded-full transition-all ${
+                index === currentHighlight
+                  ? "w-6 bg-sky-500"
+                  : "w-2 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600"
+              }`}
+              aria-label={`View highlight ${index + 1}`}
+            />
+          ))}
+        </div>
       </motion.div>
 
-      {/* Reassurance Footer */}
+      {/* Who Loves You - Family Quick View */}
+      <motion.div 
+        className="mx-auto mt-8 w-full max-w-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1 }}
+      >
+        <p className="mb-4 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+          💜 People who love you
+        </p>
+        <div className="flex justify-center gap-3">
+          {familyMembers.slice(0, 4).map((member, index) => (
+            <Link key={member.id} href={`/patient/family/${member.id}`}>
+              <motion.div
+                className="relative"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 1.1 + index * 0.1 }}
+              >
+                <div className="h-16 w-16 overflow-hidden rounded-full border-3 border-white shadow-lg dark:border-slate-700">
+                  <img
+                    src={member.photo}
+                    alt={member.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                {member.hasNewMessage && (
+                  <motion.div
+                    className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md"
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    💌
+                  </motion.div>
+                )}
+                <p className="mt-1 text-center text-xs font-medium text-slate-600 dark:text-slate-400">
+                  {member.name}
+                </p>
+              </motion.div>
+            </Link>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Reassurance Message */}
       <motion.footer
-        className="mt-auto pt-10 text-center"
+        className="mt-auto pt-8 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 1.5 }}
       >
-        <p className="text-lg text-slate-500 dark:text-slate-400">
-          💜 Sarah will visit at <span className="font-semibold text-slate-700 dark:text-slate-200">2:00 PM</span>
-        </p>
+        <div className="mx-auto max-w-xs rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 dark:from-purple-900/20 dark:to-pink-900/20">
+          <p className="text-lg text-slate-600 dark:text-slate-300">
+            You are <span className="font-bold text-purple-600 dark:text-purple-400">safe</span> and{" "}
+            <span className="font-bold text-pink-600 dark:text-pink-400">loved</span> 💜
+          </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Sarah is visiting at 2:00 PM
+          </p>
+        </div>
       </motion.footer>
     </div>
   );

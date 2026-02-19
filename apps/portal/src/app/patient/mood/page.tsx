@@ -2,325 +2,226 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import Link from "next/link";
 
+// Mood options
 const moods = [
-  { 
-    emoji: "😊", 
-    label: "Happy", 
-    color: "from-emerald-400 to-green-500",
-    bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
-    message: "That's wonderful! We're so glad you're feeling good today.",
-    followUp: "Would you like to look at some happy memories?"
-  },
-  { 
-    emoji: "😌", 
-    label: "Calm", 
-    color: "from-sky-400 to-blue-500",
-    bgColor: "bg-sky-50 dark:bg-sky-900/20",
-    message: "Peace is a beautiful feeling. You're doing great.",
-    followUp: "Would you like some gentle music?"
-  },
-  { 
-    emoji: "😐", 
-    label: "Okay", 
-    color: "from-amber-400 to-orange-500",
-    bgColor: "bg-amber-50 dark:bg-amber-900/20",
-    message: "That's perfectly fine. Every day is different.",
-    followUp: "Would you like to call someone?"
-  },
-  { 
-    emoji: "😔", 
-    label: "Sad", 
-    color: "from-blue-400 to-indigo-500",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    message: "We're sorry you're feeling sad. You are loved and not alone.",
-    followUp: "Would you like to hear from your family?"
-  },
-  { 
-    emoji: "😰", 
-    label: "Worried", 
-    color: "from-purple-400 to-violet-500",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    message: "It's okay to feel worried. You are safe here.",
-    followUp: "Would you like to try a calming exercise?"
-  },
-  { 
-    emoji: "😢", 
-    label: "Upset", 
-    color: "from-rose-400 to-red-500",
-    bgColor: "bg-rose-50 dark:bg-rose-900/20",
-    message: "We understand. These feelings will pass. Sarah is thinking of you.",
-    followUp: "Would you like to talk to Sarah?"
-  },
+  { id: "great", emoji: "😄", label: "Great!", color: "from-emerald-500 to-green-600" },
+  { id: "good", emoji: "🙂", label: "Good", color: "from-sky-500 to-blue-600" },
+  { id: "okay", emoji: "😐", label: "Okay", color: "from-amber-500 to-orange-600" },
+  { id: "sad", emoji: "😢", label: "Sad", color: "from-purple-500 to-indigo-600" },
+  { id: "worried", emoji: "😟", label: "Worried", color: "from-rose-500 to-red-600" },
 ];
 
-export default function MoodCheckPage() {
-  const [selectedMood, setSelectedMood] = useState<typeof moods[0] | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+// Follow-up activities based on mood
+const moodActivities = {
+  great: [
+    { label: "Share a memory", icon: "📸", href: "/patient/memories/record" },
+    { label: "Play a game", icon: "🧩", href: "/patient/games" },
+  ],
+  good: [
+    { label: "Look at photos", icon: "📷", href: "/patient/memories" },
+    { label: "Call someone", icon: "📞", href: "/patient/family/call" },
+  ],
+  okay: [
+    { label: "Listen to music", icon: "🎵", href: "/patient/games/music" },
+    { label: "Watch memories", icon: "▶️", href: "/patient/memories/slideshow" },
+  ],
+  sad: [
+    { label: "Call Sarah", icon: "📞", href: "/patient/family/call" },
+    { label: "Calming mode", icon: "🌿", href: "/patient/calm" },
+  ],
+  worried: [
+    { label: "Talk to me", icon: "💬", href: "/patient/talk" },
+    { label: "Calming mode", icon: "🌿", href: "/patient/calm" },
+  ],
+};
 
-  const handleMoodSelect = (mood: typeof moods[0]) => {
-    setSelectedMood(mood);
+export default function MoodCheckInPage() {
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const handleMoodSelect = (moodId: string) => {
+    setSelectedMood(moodId);
   };
 
-  const handleSubmit = () => {
-    // In production, this would save to Supabase
-    setSubmitted(true);
+  const handleSave = () => {
+    setSaved(true);
+    // In production: save to Supabase, alert caregiver if needed
   };
 
-  const handleReset = () => {
-    setSelectedMood(null);
-    setSubmitted(false);
+  const getActivities = () => {
+    if (!selectedMood) return [];
+    return moodActivities[selectedMood as keyof typeof moodActivities] || [];
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white px-6 py-8 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex min-h-screen flex-col px-6 py-8 pt-20">
       {/* Header */}
       <motion.header
+        className="text-center"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8 text-center"
       >
-        <a 
-          href="/patient" 
-          className="mb-4 inline-flex items-center gap-2 text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-          Back Home
-        </a>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
+          How Are You Feeling?
+        </h1>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">
+          It's okay to feel any way. Just tap how you feel.
+        </p>
       </motion.header>
 
       <AnimatePresence mode="wait">
-        {submitted ? (
-          /* Thank You Screen */
-          <motion.div
-            key="thanks"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="mx-auto max-w-md text-center"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 0.2 }}
-              className="mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-green-500 text-6xl shadow-xl"
-            >
-              ✓
-            </motion.div>
-            
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mb-4 text-4xl font-bold text-slate-800 dark:text-white"
-            >
-              Thank You!
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="mb-8 text-xl text-slate-600 dark:text-slate-300"
-            >
-              We&apos;ve let Sarah know how you&apos;re feeling.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="flex flex-col gap-4"
-            >
-              <motion.a
-                href="/patient"
-                className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 py-5 text-xl font-semibold text-white shadow-lg"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <span className="text-2xl">🏠</span>
-                Go Home
-              </motion.a>
-              
-              <button
-                onClick={handleReset}
-                className="py-3 text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              >
-                Check in again
-              </button>
-            </motion.div>
-          </motion.div>
-        ) : selectedMood ? (
-          /* Mood Selected - Confirmation */
-          <motion.div
-            key="selected"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="mx-auto max-w-md text-center"
-          >
-            {/* Selected Mood Display */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring" }}
-              className={`mx-auto mb-6 flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-br ${selectedMood.color} text-7xl shadow-2xl`}
-            >
-              {selectedMood.emoji}
-            </motion.div>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-4 text-3xl font-bold text-slate-800 dark:text-white"
-            >
-              You&apos;re feeling {selectedMood.label.toLowerCase()}
-            </motion.h2>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-8 text-xl text-slate-600 dark:text-slate-300"
-            >
-              {selectedMood.message}
-            </motion.p>
-
-            {/* Follow Up Suggestion */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className={`mb-8 rounded-2xl ${selectedMood.bgColor} p-6`}
-            >
-              <p className="text-lg text-slate-700 dark:text-slate-200">
-                {selectedMood.followUp}
-              </p>
-            </motion.div>
-
-            {/* Actions */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-col gap-4"
-            >
-              <motion.button
-                onClick={handleSubmit}
-                className={`flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r ${selectedMood.color} py-5 text-xl font-semibold text-white shadow-lg`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                Tell Sarah
-              </motion.button>
-
-              <button
-                onClick={() => setSelectedMood(null)}
-                className="py-3 text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              >
-                Pick a different feeling
-              </button>
-            </motion.div>
-          </motion.div>
-        ) : (
-          /* Mood Selection Grid */
+        {!saved ? (
           <motion.div
             key="selection"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="mx-auto max-w-2xl"
           >
-            <motion.h1
-              initial={{ opacity: 0, y: -20 }}
+            {/* Mood Selection */}
+            <motion.div
+              className="mx-auto mt-8 grid max-w-sm gap-4"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 text-center text-4xl font-bold text-slate-800 dark:text-white"
+              transition={{ delay: 0.2 }}
             >
-              How are you feeling?
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-12 text-center text-xl text-slate-600 dark:text-slate-300"
-            >
-              Tap the emoji that matches your mood
-            </motion.p>
-
-            <motion.div 
-              className="grid grid-cols-2 gap-4 md:grid-cols-3"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.08 }
-                }
-              }}
-            >
-              {moods.map((mood) => (
+              {moods.map((mood, index) => (
                 <motion.button
-                  key={mood.label}
-                  onClick={() => handleMoodSelect(mood)}
-                  variants={{
-                    hidden: { opacity: 0, scale: 0.8 },
-                    visible: { opacity: 1, scale: 1 }
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`flex flex-col items-center gap-3 rounded-3xl ${mood.bgColor} p-8 shadow-lg transition-shadow hover:shadow-xl`}
+                  key={mood.id}
+                  onClick={() => handleMoodSelect(mood.id)}
+                  className={`flex items-center gap-5 rounded-2xl p-5 shadow-lg transition-all ${
+                    selectedMood === mood.id
+                      ? `bg-gradient-to-r ${mood.color} text-white`
+                      : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200"
+                  }`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  <span className="text-6xl">{mood.emoji}</span>
-                  <span className="text-xl font-semibold text-slate-700 dark:text-slate-200">
-                    {mood.label}
-                  </span>
+                  <span className="text-5xl">{mood.emoji}</span>
+                  <span className="text-2xl font-semibold">{mood.label}</span>
+                  {selectedMood === mood.id && (
+                    <motion.div
+                      className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/20"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    </motion.div>
+                  )}
                 </motion.button>
               ))}
             </motion.div>
 
-            {/* Calm Mode Link for distressed users */}
+            {/* Save Button */}
+            <AnimatePresence>
+              {selectedMood && (
+                <motion.div
+                  className="mx-auto mt-8 max-w-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <motion.button
+                    onClick={handleSave}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 py-5 text-xl font-semibold text-white shadow-lg shadow-sky-500/30"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Save My Mood
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="saved"
+            className="mx-auto mt-8 flex max-w-sm flex-1 flex-col items-center justify-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Thank You */}
             <motion.div
+              className="text-center"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", bounce: 0.5 }}
+            >
+              <span className="text-7xl">
+                {moods.find((m) => m.id === selectedMood)?.emoji}
+              </span>
+              <h2 className="mt-4 text-2xl font-bold text-slate-800 dark:text-white">
+                Thank You! 💜
+              </h2>
+              <p className="mt-2 text-slate-600 dark:text-slate-400">
+                {selectedMood === "great" || selectedMood === "good"
+                  ? "That's wonderful to hear!"
+                  : "It's okay. We're here for you."}
+              </p>
+            </motion.div>
+
+            {/* Suggested Activities */}
+            <div className="mt-8 w-full space-y-3">
+              <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+                Would you like to...
+              </p>
+              {getActivities().map((activity, index) => (
+                <motion.div
+                  key={activity.label}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                >
+                  <Link href={activity.href}>
+                    <motion.button
+                      className="flex w-full items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-lg dark:bg-slate-800"
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                    >
+                      <span className="text-3xl">{activity.icon}</span>
+                      <span className="text-lg font-semibold text-slate-700 dark:text-slate-200">
+                        {activity.label}
+                      </span>
+                      <svg className="ml-auto h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </motion.button>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Home Button */}
+            <motion.div
+              className="mt-8 w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="mt-12 text-center"
+              transition={{ delay: 0.6 }}
             >
-              <a 
-                href="/patient/calm"
-                className="inline-flex items-center gap-2 text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              >
-                <span className="text-xl">🌿</span>
-                Need a moment to relax?
-              </a>
+              <Link href="/patient">
+                <motion.button
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 py-4 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span>🏠</span>
+                  Go Home
+                </motion.button>
+              </Link>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Fixed Help Button */}
-      <motion.button
-        className="fixed bottom-8 right-8 z-50 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-2xl shadow-red-500/30"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
-      >
-        <div className="text-center">
-          <svg className="mx-auto h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-          </svg>
-          <span className="mt-1 text-xs font-bold">HELP</span>
-        </div>
-      </motion.button>
     </div>
   );
 }
