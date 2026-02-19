@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Evermind Portal
 
-## Getting Started
+Caregiver dashboard for the Evermind cognitive support platform.
 
-First, run the development server:
+## 🚀 Quick Start
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Prerequisites
+- Node.js 18+
+- Supabase account
+
+### Setup
+
+1. **Clone and install:**
+   ```bash
+   cd apps/portal
+   npm install
+   ```
+
+2. **Create Supabase project:**
+   - Go to [supabase.com](https://supabase.com)
+   - Create a new project
+   - Copy your project URL and anon key
+
+3. **Configure environment:**
+   ```bash
+   cp .env.example .env.local
+   ```
+   Edit `.env.local` with your Supabase credentials.
+
+4. **Run database migrations:**
+   - Open Supabase SQL Editor
+   - Paste contents of `supabase/migrations/001_initial_schema.sql`
+   - Run the SQL
+
+5. **Start development:**
+   ```bash
+   npm run dev
+   ```
+
+6. **Deploy to Vercel:**
+   - Push to GitHub
+   - Import in Vercel
+   - Add environment variables
+   - Deploy!
+
+## 📱 Features
+
+- **Dashboard** - Overview with stats, activity feed, upcoming events
+- **Memories** - Photo albums and stories with "This Day in History"
+- **Family** - Family circle, video calls, messages
+- **Activities** - Brain games with progress tracking
+- **Schedule** - Daily routines and event management
+- **Settings** - Profile, accessibility, notifications
+
+## 🎨 UI Features
+
+- Command palette (⌘K)
+- Framer Motion animations
+- Responsive design
+- Dark mode ready
+- Skeleton loaders
+- Empty states
+
+## 🔧 Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Styling:** Tailwind CSS
+- **Animation:** Framer Motion
+- **Database:** Supabase (PostgreSQL)
+- **Auth:** Supabase Auth
+
+## 📁 Project Structure
+
+```
+src/
+├── app/                 # Pages (App Router)
+│   ├── activities/
+│   ├── family/
+│   ├── login/
+│   ├── memories/
+│   ├── schedule/
+│   ├── settings/
+│   └── signup/
+├── components/          # Reusable components
+│   ├── activity-feed.tsx
+│   ├── command-palette.tsx
+│   ├── dashboard-layout.tsx
+│   ├── empty-state.tsx
+│   ├── quick-actions.tsx
+│   ├── sidebar.tsx
+│   ├── skeleton.tsx
+│   ├── stat-card.tsx
+│   └── welcome-banner.tsx
+└── lib/
+    ├── animations.ts    # Framer Motion variants
+    └── supabase/        # Database client
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧪 Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Run dev server
+npm run dev
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Build for production
+npm run build
 
-## Learn More
+# Start production server
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📄 License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private - BPN Solutions
