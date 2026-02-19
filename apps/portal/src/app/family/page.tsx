@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components";
+import { ImageUpload } from "@/components/image-upload";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { FamilyMember } from "@/lib/supabase/types";
@@ -275,13 +276,12 @@ function FamilyMemberModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Photo URL</label>
-            <input
-              type="url"
+            <label className="mb-1.5 block text-sm font-medium">Photo</label>
+            <ImageUpload
               value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-              placeholder="https://..."
+              onChange={setPhotoUrl}
+              folder="family"
+              placeholder="https://example.com/photo.jpg"
             />
             <p className="mt-1 text-xs text-[var(--muted-foreground)]">
               Leave blank to use an auto-generated avatar
