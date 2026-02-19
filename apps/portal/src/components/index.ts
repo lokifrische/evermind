@@ -4,3 +4,4 @@ export { StatCard, StatCardSkeleton } from "./stat-card";
 export { ActivityFeed } from "./activity-feed";
 export { QuickActions } from "./quick-actions";
 export { PageWrapper } from "./page-wrapper";
+export { CommandPalette } from "./command-palette";

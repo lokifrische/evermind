@@ -76,8 +76,25 @@ export function Sidebar() {
         <span className="text-lg font-semibold tracking-tight">Evermind</span>
       </div>
 
+      {/* Search */}
+      <div className="px-3 pt-4 pb-2">
+        <button 
+          className="flex w-full items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--muted)]/50 px-3 py-2 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          onClick={() => {
+            // Dispatch keyboard event to open command palette
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+          }}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <span className="flex-1 text-left">Search...</span>
+          <kbd className="rounded bg-[var(--background)] px-1.5 py-0.5 text-xs font-medium">⌘K</kbd>
+        </button>
+      </div>
+
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-3 py-2">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (
