@@ -1,3 +1,8 @@
+/**
+ * Evermind Database Types
+ * Auto-generated from Supabase schema
+ */
+
 export type Json =
   | string
   | number
@@ -6,337 +11,304 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export type UserRole = 'patient' | 'caregiver' | 'family';
+export type MemoryType = 'album' | 'story';
+export type MoodType = 'happy' | 'calm' | 'okay' | 'sad' | 'worried' | 'upset';
+export type ActivityType = 
+  | 'memory_viewed'
+  | 'family_viewed'
+  | 'mood_checkin'
+  | 'calm_mode'
+  | 'routine_completed'
+  | 'call_made'
+  | 'help_requested';
+export type MessageType = 'voice' | 'video' | 'text';
+
 export interface Database {
   public: {
     Tables: {
-      profiles: {
+      care_circles: {
         Row: {
           id: string;
+          name: string;
           created_at: string;
           updated_at: string;
-          email: string;
-          full_name: string | null;
-          avatar_url: string | null;
-          role: "patient" | "caregiver" | "family";
         };
         Insert: {
-          id: string;
+          id?: string;
+          name: string;
           created_at?: string;
           updated_at?: string;
-          email: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          role?: "patient" | "caregiver" | "family";
         };
         Update: {
           id?: string;
+          name?: string;
           created_at?: string;
           updated_at?: string;
-          email?: string;
+        };
+      };
+      profiles: {
+        Row: {
+          id: string;
+          email: string | null;
+          full_name: string | null;
+          avatar_url: string | null;
+          role: UserRole;
+          care_circle_id: string | null;
+          is_primary_caregiver: boolean;
+          phone: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          email?: string | null;
           full_name?: string | null;
           avatar_url?: string | null;
-          role?: "patient" | "caregiver" | "family";
+          role?: UserRole;
+          care_circle_id?: string | null;
+          is_primary_caregiver?: boolean;
+          phone?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string | null;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          role?: UserRole;
+          care_circle_id?: string | null;
+          is_primary_caregiver?: boolean;
+          phone?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       patients: {
         Row: {
           id: string;
-          created_at: string;
-          updated_at: string;
-          name: string;
-          nickname: string | null;
-          avatar_url: string | null;
+          profile_id: string | null;
+          care_circle_id: string | null;
+          preferred_name: string | null;
           date_of_birth: string | null;
-          primary_caregiver_id: string;
-        };
-        Insert: {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-          name: string;
-          nickname?: string | null;
-          avatar_url?: string | null;
-          date_of_birth?: string | null;
-          primary_caregiver_id: string;
-        };
-        Update: {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-          name?: string;
-          nickname?: string | null;
-          avatar_url?: string | null;
-          date_of_birth?: string | null;
-          primary_caregiver_id?: string;
-        };
-      };
-      memories: {
-        Row: {
-          id: string;
+          diagnosis: string | null;
+          diagnosis_date: string | null;
+          notes: string | null;
           created_at: string;
           updated_at: string;
-          patient_id: string;
-          title: string;
-          description: string | null;
-          type: "album" | "story";
-          thumbnail_url: string | null;
-          created_by: string;
-          view_count: number;
-          last_viewed_at: string | null;
         };
         Insert: {
           id?: string;
+          profile_id?: string | null;
+          care_circle_id?: string | null;
+          preferred_name?: string | null;
+          date_of_birth?: string | null;
+          diagnosis?: string | null;
+          diagnosis_date?: string | null;
+          notes?: string | null;
           created_at?: string;
           updated_at?: string;
-          patient_id: string;
-          title: string;
-          description?: string | null;
-          type: "album" | "story";
-          thumbnail_url?: string | null;
-          created_by: string;
-          view_count?: number;
-          last_viewed_at?: string | null;
         };
         Update: {
           id?: string;
+          profile_id?: string | null;
+          care_circle_id?: string | null;
+          preferred_name?: string | null;
+          date_of_birth?: string | null;
+          diagnosis?: string | null;
+          diagnosis_date?: string | null;
+          notes?: string | null;
           created_at?: string;
           updated_at?: string;
-          patient_id?: string;
-          title?: string;
-          description?: string | null;
-          type?: "album" | "story";
-          thumbnail_url?: string | null;
-          created_by?: string;
-          view_count?: number;
-          last_viewed_at?: string | null;
-        };
-      };
-      memory_items: {
-        Row: {
-          id: string;
-          created_at: string;
-          memory_id: string;
-          type: "photo" | "video" | "text";
-          url: string | null;
-          content: string | null;
-          caption: string | null;
-          order_index: number;
-        };
-        Insert: {
-          id?: string;
-          created_at?: string;
-          memory_id: string;
-          type: "photo" | "video" | "text";
-          url?: string | null;
-          content?: string | null;
-          caption?: string | null;
-          order_index?: number;
-        };
-        Update: {
-          id?: string;
-          created_at?: string;
-          memory_id?: string;
-          type?: "photo" | "video" | "text";
-          url?: string | null;
-          content?: string | null;
-          caption?: string | null;
-          order_index?: number;
         };
       };
       family_members: {
         Row: {
           id: string;
-          created_at: string;
-          patient_id: string;
-          user_id: string | null;
+          care_circle_id: string | null;
           name: string;
           relationship: string;
-          avatar_url: string | null;
-          is_primary: boolean;
+          photo_url: string | null;
+          voice_intro_url: string | null;
+          fun_fact: string | null;
+          is_special: boolean;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
-          created_at?: string;
-          patient_id: string;
-          user_id?: string | null;
+          care_circle_id?: string | null;
           name: string;
           relationship: string;
-          avatar_url?: string | null;
-          is_primary?: boolean;
+          photo_url?: string | null;
+          voice_intro_url?: string | null;
+          fun_fact?: string | null;
+          is_special?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
-          created_at?: string;
-          patient_id?: string;
-          user_id?: string | null;
+          care_circle_id?: string | null;
           name?: string;
           relationship?: string;
-          avatar_url?: string | null;
-          is_primary?: boolean;
+          photo_url?: string | null;
+          voice_intro_url?: string | null;
+          fun_fact?: string | null;
+          is_special?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
         };
       };
-      messages: {
+      memories: {
         Row: {
           id: string;
-          created_at: string;
-          patient_id: string;
-          from_user_id: string;
-          from_name: string;
-          type: "voice" | "video" | "text";
-          content_url: string | null;
-          content_text: string | null;
-          duration_seconds: number | null;
-          is_read: boolean;
-        };
-        Insert: {
-          id?: string;
-          created_at?: string;
-          patient_id: string;
-          from_user_id: string;
-          from_name: string;
-          type: "voice" | "video" | "text";
-          content_url?: string | null;
-          content_text?: string | null;
-          duration_seconds?: number | null;
-          is_read?: boolean;
-        };
-        Update: {
-          id?: string;
-          created_at?: string;
-          patient_id?: string;
-          from_user_id?: string;
-          from_name?: string;
-          type?: "voice" | "video" | "text";
-          content_url?: string | null;
-          content_text?: string | null;
-          duration_seconds?: number | null;
-          is_read?: boolean;
-        };
-      };
-      activities: {
-        Row: {
-          id: string;
-          created_at: string;
-          patient_id: string;
-          game_type: string;
-          score: number | null;
-          accuracy: number | null;
-          duration_seconds: number;
-          completed_at: string;
-        };
-        Insert: {
-          id?: string;
-          created_at?: string;
-          patient_id: string;
-          game_type: string;
-          score?: number | null;
-          accuracy?: number | null;
-          duration_seconds: number;
-          completed_at?: string;
-        };
-        Update: {
-          id?: string;
-          created_at?: string;
-          patient_id?: string;
-          game_type?: string;
-          score?: number | null;
-          accuracy?: number | null;
-          duration_seconds?: number;
-          completed_at?: string;
-        };
-      };
-      scheduled_events: {
-        Row: {
-          id: string;
-          created_at: string;
-          patient_id: string;
+          care_circle_id: string | null;
           title: string;
           description: string | null;
-          type: "routine" | "activity" | "memory" | "call" | "special";
-          scheduled_at: string;
-          completed_at: string | null;
-          created_by: string;
+          type: MemoryType;
+          thumbnail_url: string | null;
+          is_favorite: boolean;
+          last_viewed_at: string | null;
+          view_count: number;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
-          created_at?: string;
-          patient_id: string;
+          care_circle_id?: string | null;
           title: string;
           description?: string | null;
-          type: "routine" | "activity" | "memory" | "call" | "special";
-          scheduled_at: string;
-          completed_at?: string | null;
-          created_by: string;
+          type?: MemoryType;
+          thumbnail_url?: string | null;
+          is_favorite?: boolean;
+          last_viewed_at?: string | null;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
-          created_at?: string;
-          patient_id?: string;
+          care_circle_id?: string | null;
           title?: string;
           description?: string | null;
-          type?: "routine" | "activity" | "memory" | "call" | "special";
-          scheduled_at?: string;
-          completed_at?: string | null;
-          created_by?: string;
+          type?: MemoryType;
+          thumbnail_url?: string | null;
+          is_favorite?: boolean;
+          last_viewed_at?: string | null;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      daily_routines: {
+        Row: {
+          id: string;
+          care_circle_id: string | null;
+          time: string;
+          title: string;
+          icon: string | null;
+          description: string | null;
+          is_medication: boolean;
+          days_of_week: number[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          care_circle_id?: string | null;
+          time: string;
+          title: string;
+          icon?: string | null;
+          description?: string | null;
+          is_medication?: boolean;
+          days_of_week?: number[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          care_circle_id?: string | null;
+          time?: string;
+          title?: string;
+          icon?: string | null;
+          description?: string | null;
+          is_medication?: boolean;
+          days_of_week?: number[];
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      mood_checkins: {
+        Row: {
+          id: string;
+          patient_id: string | null;
+          mood: MoodType;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          patient_id?: string | null;
+          mood: MoodType;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          patient_id?: string | null;
+          mood?: MoodType;
+          notes?: string | null;
+          created_at?: string;
         };
       };
       activity_log: {
         Row: {
           id: string;
-          created_at: string;
-          patient_id: string;
-          type: "memory" | "call" | "game" | "message";
-          title: string;
+          care_circle_id: string | null;
+          activity_type: ActivityType;
           description: string | null;
           metadata: Json | null;
+          created_at: string;
         };
         Insert: {
           id?: string;
-          created_at?: string;
-          patient_id: string;
-          type: "memory" | "call" | "game" | "message";
-          title: string;
+          care_circle_id?: string | null;
+          activity_type: ActivityType;
           description?: string | null;
           metadata?: Json | null;
+          created_at?: string;
         };
         Update: {
           id?: string;
-          created_at?: string;
-          patient_id?: string;
-          type?: "memory" | "call" | "game" | "message";
-          title?: string;
+          care_circle_id?: string | null;
+          activity_type?: ActivityType;
           description?: string | null;
           metadata?: Json | null;
+          created_at?: string;
         };
       };
     };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      [_ in never]: never;
-    };
     Enums: {
-      [_ in never]: never;
+      user_role: UserRole;
+      memory_type: MemoryType;
+      mood_type: MoodType;
+      activity_type: ActivityType;
+      message_type: MessageType;
     };
   };
 }
 
-// Helper types
-export type Tables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Row"];
-export type InsertTables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Insert"];
-export type UpdateTables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Update"];
-
-// Convenient type aliases
-export type Profile = Tables<"profiles">;
-export type Patient = Tables<"patients">;
-export type Memory = Tables<"memories">;
-export type MemoryItem = Tables<"memory_items">;
-export type FamilyMember = Tables<"family_members">;
-export type Message = Tables<"messages">;
-export type Activity = Tables<"activities">;
-export type ScheduledEvent = Tables<"scheduled_events">;
-export type ActivityLogEntry = Tables<"activity_log">;
+// Convenience type exports
+export type CareCircle = Database['public']['Tables']['care_circles']['Row'];
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type Patient = Database['public']['Tables']['patients']['Row'];
+export type FamilyMember = Database['public']['Tables']['family_members']['Row'];
+export type Memory = Database['public']['Tables']['memories']['Row'];
+export type DailyRoutine = Database['public']['Tables']['daily_routines']['Row'];
+export type MoodCheckin = Database['public']['Tables']['mood_checkins']['Row'];
+export type ActivityLogEntry = Database['public']['Tables']['activity_log']['Row'];
