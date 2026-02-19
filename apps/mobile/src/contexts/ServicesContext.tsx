@@ -13,8 +13,8 @@
  */
 
 import React, { createContext, useContext, useMemo, ReactNode } from 'react';
-import { ITTSService, IAssistantService, ISpeechService } from '../services/interfaces';
-import { mockTTSService, mockAssistantService, expoSpeechService } from '../services/providers';
+import { ITTSService, IAssistantService, ISpeechService, IVideoService } from '../services/interfaces';
+import { mockTTSService, mockAssistantService, expoSpeechService, mockVideoService } from '../services/providers';
 
 interface ServicesContextValue {
   /** Text-to-Speech service */
@@ -26,8 +26,10 @@ interface ServicesContextValue {
   /** AI Assistant service */
   assistant: IAssistantService;
   
+  /** Video calling service */
+  video: IVideoService;
+  
   // Future services (uncomment when implemented):
-  // video: IVideoService;
   // storage: IStorageService;
 }
 
@@ -39,6 +41,7 @@ interface ServicesProviderProps {
   tts?: ITTSService;
   speech?: ISpeechService;
   assistant?: IAssistantService;
+  video?: IVideoService;
 }
 
 export function ServicesProvider({
@@ -46,12 +49,14 @@ export function ServicesProvider({
   tts = mockTTSService,
   speech = expoSpeechService,
   assistant = mockAssistantService,
+  video = mockVideoService,
 }: ServicesProviderProps) {
   const value = useMemo<ServicesContextValue>(() => ({
     tts,
     speech,
     assistant,
-  }), [tts, speech, assistant]);
+    video,
+  }), [tts, speech, assistant, video]);
 
   return (
     <ServicesContext.Provider value={value}>
@@ -79,6 +84,10 @@ export function useSpeech(): ISpeechService {
 
 export function useAssistant(): IAssistantService {
   return useServices().assistant;
+}
+
+export function useVideo(): IVideoService {
+  return useServices().video;
 }
 
 export default ServicesContext;

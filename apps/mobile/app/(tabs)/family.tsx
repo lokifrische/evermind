@@ -131,7 +131,7 @@ export default function FamilyScreen() {
 
   const handleCallPress = (member: typeof familyData[0]) => {
     triggerHaptic('heavy');
-    // Initiate video call
+    router.push(`/family/call?id=${member.id}&name=${encodeURIComponent(member.name)}&photo=${encodeURIComponent(member.photoUrl)}` as any);
   };
 
   const handleReaction = (photoId: string, emoji: string) => {
