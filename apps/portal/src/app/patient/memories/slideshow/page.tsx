@@ -3,15 +3,34 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
-// Mock slideshow photos
-const slideshowPhotos = [
+interface Memory {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  type: string;
+  created_at: string;
+}
+
+interface MemoryItem {
+  id: string;
+  memory_id: string;
+  media_url: string;
+  caption: string | null;
+  audio_url: string | null;
+}
+
+// Fallback slideshow photos for demo
+const fallbackPhotos = [
   {
     id: "1",
     src: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=800&fit=crop",
     title: "Sarah's Wedding Day",
     date: "June 15, 2019",
-    hasNarration: true,
+    hasNarration: false,
+    audioUrl: null,
   },
   {
     id: "2",
@@ -19,13 +38,15 @@ const slideshowPhotos = [
     title: "Christmas at Home",
     date: "December 25, 2018",
     hasNarration: false,
+    audioUrl: null,
   },
   {
     id: "3",
     src: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&h=800&fit=crop",
     title: "David's Graduation",
     date: "May 20, 2010",
-    hasNarration: true,
+    hasNarration: false,
+    audioUrl: null,
   },
   {
     id: "4",
@@ -33,45 +54,144 @@ const slideshowPhotos = [
     title: "Beach Vacation",
     date: "July 1998",
     hasNarration: false,
+    audioUrl: null,
   },
   {
     id: "5",
     src: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop",
     title: "First Home",
     date: "September 1985",
-    hasNarration: true,
+    hasNarration: false,
+    audioUrl: null,
   },
   {
     id: "6",
     src: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&h=800&fit=crop",
     title: "Our Wedding Day",
     date: "April 12, 1975",
-    hasNarration: true,
+    hasNarration: false,
+    audioUrl: null,
   },
 ];
 
+const DEMO_CARE_CIRCLE_ID = process.env.NEXT_PUBLIC_DEMO_CARE_CIRCLE_ID || '11111111-1111-1111-1111-111111111111';
+
 export default function SlideshowPage() {
+  const [photos, setPhotos] = useState(fallbackPhotos);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [showInfo, setShowInfo] = useState(true);
+  const [loading, setLoading] = useState(true);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const currentPhoto = slideshowPhotos[currentIndex];
-  const displayDuration = currentPhoto.hasNarration ? 15000 : 8000; // Longer for narration
+  // Fetch memories from Supabase
+  useEffect(() => {
+    const fetchMemories = async () => {
+      const supabase = getSupabaseClient();
+      
+      // Fetch memories
+      const { data: memories, error } = await supabase
+        .from('memories')
+        .select('*')
+        .eq('care_circle_id', DEMO_CARE_CIRCLE_ID)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching memories:', error);
+        setLoading(false);
+        return;
+      }
+
+      if (memories && memories.length > 0) {
+        // Also fetch memory items for photos
+        const { data: items } = await supabase
+          .from('memory_items')
+          .select('*')
+          .in('memory_id', memories.map(m => m.id));
+
+        // Build photo array from memories and their items
+        const photoList: typeof fallbackPhotos = [];
+
+        for (const memory of memories) {
+          const memoryItems = items?.filter(i => i.memory_id === memory.id) || [];
+          
+          if (memoryItems.length > 0) {
+            // Add each item as a slide
+            for (const item of memoryItems) {
+              photoList.push({
+                id: item.id,
+                src: item.media_url,
+                title: item.caption || memory.title,
+                date: new Date(memory.created_at).toLocaleDateString('en-US', { 
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                }),
+                hasNarration: !!item.audio_url,
+                audioUrl: item.audio_url,
+              });
+            }
+          } else {
+            // Use memory thumbnail if no items
+            photoList.push({
+              id: memory.id,
+              src: memory.thumbnail_url || 'https://images.unsplash.com/photo-1482517967863-00e15c9b44be?w=1200&h=800&fit=crop',
+              title: memory.title,
+              date: new Date(memory.created_at).toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+              }),
+              hasNarration: memory.type === 'story',
+              audioUrl: null,
+            });
+          }
+        }
+
+        if (photoList.length > 0) {
+          setPhotos(photoList);
+        }
+      }
+      
+      setLoading(false);
+    };
+
+    fetchMemories();
+  }, []);
+
+  const currentPhoto = photos[currentIndex];
+  const displayDuration = currentPhoto?.hasNarration ? 15000 : 8000;
 
   // Auto-advance slideshow
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && !loading) {
       autoPlayRef.current = setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % slideshowPhotos.length);
+        setCurrentIndex((prev) => (prev + 1) % photos.length);
       }, displayDuration);
     }
     return () => {
       if (autoPlayRef.current) clearTimeout(autoPlayRef.current);
     };
-  }, [currentIndex, isPlaying, displayDuration]);
+  }, [currentIndex, isPlaying, displayDuration, photos.length, loading]);
+
+  // Play audio when slide has narration
+  useEffect(() => {
+    if (currentPhoto?.audioUrl && isPlaying) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      audioRef.current = new Audio(currentPhoto.audioUrl);
+      audioRef.current.play().catch(console.error);
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [currentIndex, currentPhoto?.audioUrl, isPlaying]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -94,18 +214,38 @@ export default function SlideshowPage() {
 
   // Navigation
   const goNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % slideshowPhotos.length);
+    setCurrentIndex((prev) => (prev + 1) % photos.length);
     if (autoPlayRef.current) clearTimeout(autoPlayRef.current);
   };
 
   const goPrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + slideshowPhotos.length) % slideshowPhotos.length);
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length);
     if (autoPlayRef.current) clearTimeout(autoPlayRef.current);
   };
 
   const togglePlay = () => {
-    setIsPlaying((prev) => !prev);
+    setIsPlaying((prev) => {
+      if (prev && audioRef.current) {
+        audioRef.current.pause();
+      }
+      return !prev;
+    });
   };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black">
+        <div className="text-center text-white">
+          <motion.div
+            className="mx-auto h-16 w-16 rounded-full border-4 border-white/30 border-t-white"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
+          <p className="mt-4 text-lg">Loading memories...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -188,7 +328,7 @@ export default function SlideshowPage() {
 
             {/* Progress Bar */}
             <div className="absolute left-4 right-4 top-16 flex gap-1">
-              {slideshowPhotos.map((_, index) => (
+              {photos.map((_, index) => (
                 <div
                   key={index}
                   className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
@@ -265,7 +405,7 @@ export default function SlideshowPage() {
 
             {/* Photo Counter */}
             <div className="absolute bottom-10 right-4 rounded-full bg-black/40 px-3 py-1 text-sm text-white backdrop-blur-sm">
-              {currentIndex + 1} / {slideshowPhotos.length}
+              {currentIndex + 1} / {photos.length}
             </div>
           </motion.div>
         )}

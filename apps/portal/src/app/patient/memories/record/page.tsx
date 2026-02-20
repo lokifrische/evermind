@@ -1,8 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 // Recording states
 type RecordingState = "idle" | "recording" | "paused" | "done";
@@ -17,14 +19,24 @@ const prompts = [
   { id: "food", text: "What was your grandmother's best recipe?", icon: "🍳" },
 ];
 
+const DEMO_CARE_CIRCLE_ID = process.env.NEXT_PUBLIC_DEMO_CARE_CIRCLE_ID || '11111111-1111-1111-1111-111111111111';
+
 export default function RecordStoryPage() {
+  const router = useRouter();
   const [state, setState] = useState<RecordingState>("idle");
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [silenceTime, setSilenceTime] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Recording timer
   useEffect(() => {
@@ -40,6 +52,18 @@ export default function RecordStoryPage() {
     };
   }, [state]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
   // Format time
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -47,36 +71,141 @@ export default function RecordStoryPage() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Start recording
-  const startRecording = () => {
-    setState("recording");
-    setRecordingTime(0);
-    setSilenceTime(0);
-  };
+  // Start recording with real audio
+  const startRecording = useCallback(async () => {
+    try {
+      setError(null);
+      chunksRef.current = [];
+      
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        } 
+      });
+      streamRef.current = stream;
+
+      // Create MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        setAudioBlob(blob);
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+      };
+
+      mediaRecorder.start(1000); // Collect data every second
+      setState("recording");
+      setRecordingTime(0);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      setError("Could not access microphone. Please allow microphone access.");
+    }
+  }, []);
 
   // Stop recording
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
     setState("done");
-    // In production: stop media recorder, process audio
-  };
+  }, []);
 
-  // Save recording
-  const saveRecording = () => {
-    setShowSuccess(true);
-    // In production: upload to Supabase storage
-    setTimeout(() => {
-      setShowSuccess(false);
-      setState("idle");
-      setRecordingTime(0);
-      setSelectedPrompt(null);
-    }, 2500);
-  };
+  // Save recording to Supabase
+  const saveRecording = useCallback(async () => {
+    if (!audioBlob) {
+      setError("No recording to save");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const supabase = getSupabaseClient();
+      
+      // Generate filename
+      const ext = audioBlob.type.includes('webm') ? 'webm' : 'm4a';
+      const fileName = `stories/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+      
+      // Upload audio to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(fileName, audioBlob, {
+          cacheControl: '3600',
+          contentType: audioBlob.type,
+        });
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('media')
+        .getPublicUrl(uploadData.path);
+
+      // Get the active prompt text
+      const activePrompt = prompts.find(p => p.id === selectedPrompt);
+      const memoryTitle = title.trim() || activePrompt?.text || "My Story";
+
+      // Create memory record
+      const { error: dbError } = await supabase
+        .from('memories')
+        .insert({
+          care_circle_id: DEMO_CARE_CIRCLE_ID,
+          title: memoryTitle,
+          description: activePrompt ? `Prompted: ${activePrompt.text}` : "A recorded story",
+          type: 'story',
+          thumbnail_url: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=300&fit=crop',
+        });
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        // Still show success since audio was uploaded
+      }
+
+      // Show success
+      setShowSuccess(true);
+      
+      // Reset after delay
+      setTimeout(() => {
+        router.push('/patient/memories');
+      }, 2500);
+
+    } catch (err) {
+      console.error("Save error:", err);
+      setError(err instanceof Error ? err.message : "Failed to save recording");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [audioBlob, selectedPrompt, title, router]);
 
   // Discard recording
-  const discardRecording = () => {
+  const discardRecording = useCallback(() => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioBlob(null);
+    setAudioUrl(null);
     setState("idle");
     setRecordingTime(0);
-  };
+    setTitle("");
+  }, [audioUrl]);
 
   const activePrompt = prompts.find((p) => p.id === selectedPrompt);
 
@@ -95,6 +224,17 @@ export default function RecordStoryPage() {
           Share a memory in your own words
         </p>
       </motion.header>
+
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          className="mx-auto mt-4 max-w-sm rounded-xl bg-red-100 px-4 py-3 text-center text-red-700 dark:bg-red-900/30 dark:text-red-300"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {error}
+        </motion.div>
+      )}
 
       {/* Prompt Selection (if idle) */}
       <AnimatePresence mode="wait">
@@ -198,6 +338,7 @@ export default function RecordStoryPage() {
                   if (state === "idle") startRecording();
                   else if (state === "recording") stopRecording();
                 }}
+                disabled={isSaving}
                 className={`flex h-32 w-32 items-center justify-center rounded-full shadow-2xl ${
                   state === "recording"
                     ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/40"
@@ -242,16 +383,53 @@ export default function RecordStoryPage() {
               </p>
             </motion.div>
 
+            {/* Audio Playback when done */}
+            {state === "done" && audioUrl && (
+              <motion.div
+                className="mt-6 w-full"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <p className="mb-2 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Listen to your recording:
+                </p>
+                <audio
+                  src={audioUrl}
+                  controls
+                  className="w-full rounded-xl"
+                />
+              </motion.div>
+            )}
+
+            {/* Title input when done */}
+            {state === "done" && (
+              <motion.div
+                className="mt-4 w-full"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Give your story a title (optional)"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-slate-700 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                />
+              </motion.div>
+            )}
+
             {/* Actions when done */}
             {state === "done" && (
               <motion.div
-                className="mt-8 flex w-full gap-4"
+                className="mt-6 flex w-full gap-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
                 <motion.button
                   onClick={discardRecording}
-                  className="flex-1 rounded-2xl bg-slate-200 py-4 font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                  disabled={isSaving}
+                  className="flex-1 rounded-2xl bg-slate-200 py-4 font-semibold text-slate-700 disabled:opacity-50 dark:bg-slate-700 dark:text-slate-200"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -259,11 +437,12 @@ export default function RecordStoryPage() {
                 </motion.button>
                 <motion.button
                   onClick={saveRecording}
-                  className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 py-4 font-semibold text-white shadow-lg shadow-emerald-500/30"
+                  disabled={isSaving}
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 py-4 font-semibold text-white shadow-lg shadow-emerald-500/30 disabled:opacity-50"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  Save Story ✓
+                  {isSaving ? "Saving..." : "Save Story ✓"}
                 </motion.button>
               </motion.div>
             )}
