@@ -11,7 +11,7 @@
  * - Celebration feedback
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,12 +19,13 @@ import { Screen } from '../../src/components/layout/Screen';
 import { Text } from '../../src/components/ui/Text';
 import { Button } from '../../src/components/ui/Button';
 import { useAccessibility } from '../../src/contexts/AccessibilityContext';
+import { useData } from '../../src/contexts/DataContext';
 import { colors, spacing, borderRadius, MIN_TOUCH_TARGET } from '../../src/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Mock family photos for Memory Match
-const familyPhotos = [
+// Fallback family photos for Memory Match (used if no Supabase data)
+const fallbackFamilyPhotos = [
   { id: '1', name: 'Sarah', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop' },
   { id: '2', name: 'David', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop' },
   { id: '3', name: 'Robert', url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop' },
@@ -53,12 +54,25 @@ function shuffleArray<T>(array: T[]): T[] {
 
 function MemoryMatchGame() {
   const { triggerHaptic, themeColors } = useAccessibility();
+  const { familyMembers } = useData();
   const [cards, setCards] = useState<Card[]>([]);
   const [flippedCards, setFlippedCards] = useState<string[]>([]);
   const [matches, setMatches] = useState(0);
   const [moves, setMoves] = useState(0);
   const [gameComplete, setGameComplete] = useState(false);
   const [gridSize] = useState(4); // 4x3 = 12 cards = 6 pairs
+
+  // Use Supabase family members if available, otherwise fallback
+  const familyPhotos = useMemo(() => {
+    if (familyMembers.length > 0) {
+      return familyMembers.map(m => ({
+        id: m.id,
+        name: m.name,
+        url: m.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&size=200&background=random`,
+      }));
+    }
+    return fallbackFamilyPhotos;
+  }, [familyMembers]);
 
   const initializeGame = useCallback(() => {
     // Use first 6 photos for 4x3 grid
@@ -90,7 +104,7 @@ function MemoryMatchGame() {
     setMatches(0);
     setMoves(0);
     setGameComplete(false);
-  }, []);
+  }, [familyPhotos]);
 
   useEffect(() => {
     initializeGame();
