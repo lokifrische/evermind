@@ -3,6 +3,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import Link from "next/link";
+import { getSupabaseClient } from "@/lib/supabase/client";
+
+const DEMO_CARE_CIRCLE_ID = process.env.NEXT_PUBLIC_DEMO_CARE_CIRCLE_ID || '11111111-1111-1111-1111-111111111111';
 
 // Mood options
 const moods = [
@@ -45,9 +48,25 @@ export default function MoodCheckInPage() {
     setSelectedMood(moodId);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!selectedMood) return;
+    
+    const supabase = getSupabaseClient();
+    
+    // Log the mood check-in as an activity
+    await supabase.from('activity_log').insert({
+      care_circle_id: DEMO_CARE_CIRCLE_ID,
+      activity_type: 'mood_checkin',
+      description: `Feeling ${selectedMood}`,
+      metadata: { mood: selectedMood },
+    });
+
+    // If mood is worried or sad, could trigger notification to caregiver here
+    if (selectedMood === 'worried' || selectedMood === 'sad') {
+      console.log('Patient needs support - could notify caregiver');
+    }
+
     setSaved(true);
-    // In production: save to Supabase, alert caregiver if needed
   };
 
   const getActivities = () => {
