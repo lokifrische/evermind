@@ -8,13 +8,24 @@ import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
 // Get Supabase credentials from environment
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+// Priority: expo-constants extra > process.env > hardcoded fallback for demo
+const supabaseUrl = 
+  Constants.expoConfig?.extra?.supabaseUrl || 
+  process.env.EXPO_PUBLIC_SUPABASE_URL || 
+  'https://gfxvlwkvfqyeecnzilrz.supabase.co';
+
+const supabaseAnonKey = 
+  Constants.expoConfig?.extra?.supabaseAnonKey || 
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmeHZsd2t2ZnF5ZWVjbnppbHJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NzE2OTksImV4cCI6MjA4NzA0NzY5OX0.BQtr7QUsQfzkI9SbygYgqAUkU3cBBvkLYaA_9y8-08I';
+
+// Log for debugging (remove in production)
+console.log('[Supabase] Initializing with URL:', supabaseUrl ? 'Set' : 'MISSING');
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
+    persistSession: false, // Don't persist in Expo Go
     autoRefreshToken: true,
   },
 });

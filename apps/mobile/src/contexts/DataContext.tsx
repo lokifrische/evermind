@@ -115,12 +115,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshFamilyMembers = useCallback(async () => {
+    console.log('[DataContext] Fetching family members for:', user.careCircleId);
     const data = await getFamilyMembers(user.careCircleId);
+    console.log('[DataContext] Got', data.length, 'family members');
     setFamilyMembers(data);
   }, [user.careCircleId]);
 
   const refreshMemories = useCallback(async () => {
+    console.log('[DataContext] Fetching memories for:', user.careCircleId);
     const data = await getMemories(user.careCircleId);
+    console.log('[DataContext] Got', data.length, 'memories');
     setMemories(data);
   }, [user.careCircleId]);
 
