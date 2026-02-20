@@ -95,6 +95,16 @@ const games = [
     href: "/patient/games/math",
     difficulty: "Easy",
   },
+  {
+    id: "spot-difference",
+    name: "Spot Difference",
+    description: "Find the hidden circles",
+    icon: "👀",
+    bgGradient: "from-fuchsia-500 to-pink-600",
+    shadowColor: "shadow-fuchsia-500/30",
+    href: "/patient/games/spot-difference",
+    difficulty: "Easy",
+  },
 ];
 
 // Featured music playlist

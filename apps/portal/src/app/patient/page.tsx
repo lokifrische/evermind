@@ -417,6 +417,37 @@ export default function PatientHomePage() {
         </Link>
       </motion.div>
 
+      {/* Calm Mode Quick Access */}
+      <motion.div
+        className="mx-auto mt-4 w-full max-w-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.4 }}
+      >
+        <Link href="/patient/calm">
+          <motion.div
+            className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-4 shadow-sm dark:from-emerald-900/20 dark:to-teal-900/20"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-2xl shadow-lg">
+              🌿
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-slate-800 dark:text-white">
+                Need to Relax?
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Breathing exercises & calming scenes
+              </p>
+            </div>
+            <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </motion.div>
+        </Link>
+      </motion.div>
+
       {/* Reassurance Message */}
       <motion.footer
         className="mt-auto pt-8 text-center"
