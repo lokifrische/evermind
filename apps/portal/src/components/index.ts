@@ -8,3 +8,4 @@ export { CommandPalette } from "./command-palette";
 export { Skeleton, QuickActionsSkeleton, StatGridSkeleton, ActivityFeedSkeleton, MemoryGridSkeleton, FamilyMembersSkeleton } from "./skeleton";
 export { EmptyState, NoMemoriesState, NoFamilyState, NoActivitiesState, NoMessagesState } from "./empty-state";
 export { WelcomeBanner } from "./welcome-banner";
+export { ErrorBoundary, PatientErrorFallback, LoadingFallback, PatientLoadingFallback } from "./error-boundary";

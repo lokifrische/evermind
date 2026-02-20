@@ -699,6 +699,161 @@ const sortStyles = StyleSheet.create({
   },
 });
 
+// ==================== Word Association Game ====================
+
+const wordPairs = [
+  { word: 'Sun', match: 'Moon', options: ['Moon', 'Star', 'Cloud', 'Rain'] },
+  { word: 'Hot', match: 'Cold', options: ['Cold', 'Warm', 'Fire', 'Ice'] },
+  { word: 'Day', match: 'Night', options: ['Night', 'Morning', 'Evening', 'Noon'] },
+  { word: 'Up', match: 'Down', options: ['Down', 'Left', 'Right', 'Over'] },
+  { word: 'Black', match: 'White', options: ['White', 'Gray', 'Red', 'Blue'] },
+  { word: 'Open', match: 'Close', options: ['Close', 'Shut', 'Lock', 'Door'] },
+  { word: 'Happy', match: 'Sad', options: ['Sad', 'Angry', 'Joy', 'Smile'] },
+  { word: 'Big', match: 'Small', options: ['Small', 'Large', 'Tiny', 'Huge'] },
+];
+
+function WordAssociationGame() {
+  const { themeColors, triggerHaptic } = useAccessibility();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [gameComplete, setGameComplete] = useState(false);
+  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+
+  const currentPair = wordPairs[currentIndex];
+
+  useEffect(() => {
+    setShuffledOptions(shuffleArray([...currentPair.options]));
+  }, [currentIndex]);
+
+  const handleAnswer = (answer: string) => {
+    if (answer === currentPair.match) {
+      triggerHaptic('success');
+      setFeedback('correct');
+      setScore(s => s + 1);
+    } else {
+      triggerHaptic('error');
+      setFeedback('wrong');
+    }
+    
+    setTimeout(() => {
+      setFeedback(null);
+      if (currentIndex < wordPairs.length - 1) {
+        setCurrentIndex(i => i + 1);
+      } else {
+        setGameComplete(true);
+      }
+    }, 1000);
+  };
+
+  const restart = () => {
+    setCurrentIndex(0);
+    setScore(0);
+    setGameComplete(false);
+    setFeedback(null);
+  };
+
+  if (gameComplete) {
+    return (
+      <View style={styles.celebrationContainer}>
+        <Ionicons name="trophy" size={80} color={colors.games.main} />
+        <Text variant="h1" center style={{ marginTop: spacing.lg }}>
+          🎉 Well Done! 🎉
+        </Text>
+        <Text variant="bodyLarge" center color={themeColors.textSecondary} style={{ marginTop: spacing.md }}>
+          You scored {score} out of {wordPairs.length}!
+        </Text>
+        <Button
+          title="Play Again"
+          variant="primary"
+          size="large"
+          onPress={restart}
+          color={colors.games.main}
+          style={{ marginTop: spacing.xl }}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.gameContainer}>
+      <View style={styles.scoreRow}>
+        <View style={styles.scoreItem}>
+          <Text variant="h2" color={colors.games.main}>{score}</Text>
+          <Text variant="caption" color={themeColors.textSecondary}>Score</Text>
+        </View>
+        <View style={styles.scoreItem}>
+          <Text variant="h2" color={themeColors.text}>{currentIndex + 1}/{wordPairs.length}</Text>
+          <Text variant="caption" color={themeColors.textSecondary}>Round</Text>
+        </View>
+      </View>
+
+      <Text variant="body" center color={themeColors.textSecondary}>
+        What&apos;s the opposite of...
+      </Text>
+
+      <View style={assocStyles.wordCard}>
+        <Text variant="h1" color={colors.games.main}>{currentPair.word}</Text>
+      </View>
+
+      <View style={assocStyles.optionsGrid}>
+        {shuffledOptions.map((option) => (
+          <TouchableOpacity
+            key={option}
+            onPress={() => handleAnswer(option)}
+            disabled={!!feedback}
+            style={[
+              assocStyles.optionButton,
+              feedback === 'correct' && option === currentPair.match && { backgroundColor: '#D1FAE5', borderColor: colors.success },
+              feedback === 'wrong' && option === currentPair.match && { backgroundColor: '#D1FAE5', borderColor: colors.success },
+            ]}
+          >
+            <Text variant="h3" center>{option}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {feedback && (
+        <Text 
+          variant="bodyLarge" 
+          center 
+          color={feedback === 'correct' ? colors.success : colors.error}
+          style={{ marginTop: spacing.md }}
+        >
+          {feedback === 'correct' ? '✓ Correct!' : '✗ Try the highlighted one'}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+const assocStyles = StyleSheet.create({
+  wordCard: {
+    marginVertical: spacing.xl,
+    paddingHorizontal: spacing.xl * 2,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.games.light,
+    borderRadius: borderRadius.xl,
+    alignItems: 'center',
+  },
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  optionButton: {
+    width: (SCREEN_WIDTH - spacing.lg * 3) / 2,
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: colors.gray[200],
+    minHeight: MIN_TOUCH_TARGET,
+  },
+});
+
 // Placeholder for other games
 function ComingSoonGame({ title }: { title: string }) {
   const { themeColors } = useAccessibility();
@@ -744,6 +899,8 @@ export default function GameScreen() {
         return <DailyWordGame />;
       case 'sorting':
         return <SortingGame />;
+      case 'word-association':
+        return <WordAssociationGame />;
       default:
         return <ComingSoonGame title={gameTitle} />;
     }
