@@ -21,6 +21,7 @@ import { Button } from '../../src/components/ui/Button';
 import { useAccessibility } from '../../src/contexts/AccessibilityContext';
 import { useData } from '../../src/contexts/DataContext';
 import { colors, spacing, borderRadius, MIN_TOUCH_TARGET } from '../../src/constants/theme';
+import { logGamePlayed } from '../../src/services/activityLog';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
