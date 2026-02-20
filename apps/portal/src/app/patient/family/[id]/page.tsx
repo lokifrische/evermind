@@ -127,11 +127,24 @@ const familyData: Record<string, {
   },
 };
 
+// ID to slug mapping (supports both numeric and string IDs)
+const idToSlug: Record<string, string> = {
+  "1": "sarah",
+  "2": "david",
+  "3": "emma",
+  "4": "tommy",
+  "sarah": "sarah",
+  "david": "david",
+  "emma": "emma",
+  "tommy": "tommy",
+};
+
 type TabType = "about" | "messages" | "photos" | "memories";
 
 export default function FamilyMemberPage() {
   const params = useParams();
-  const memberId = params.id as string;
+  const rawId = params.id as string;
+  const memberId = idToSlug[rawId] || rawId; // Map numeric IDs to slugs
   const member = familyData[memberId];
   const [activeTab, setActiveTab] = useState<TabType>("about");
   const [playingMessage, setPlayingMessage] = useState<number | null>(null);
