@@ -85,6 +85,16 @@ const games = [
     href: "/patient/games/jigsaw",
     difficulty: "Easy",
   },
+  {
+    id: "math",
+    name: "Quick Math",
+    description: "Simple addition & more",
+    icon: "🔢",
+    bgGradient: "from-emerald-500 to-teal-600",
+    shadowColor: "shadow-emerald-500/30",
+    href: "/patient/games/math",
+    difficulty: "Easy",
+  },
 ];
 
 // Featured music playlist

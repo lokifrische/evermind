@@ -349,12 +349,45 @@ export default function PatientHomePage() {
         </div>
       </motion.div>
 
-      {/* Mood Check-in Quick Access */}
+      {/* Today's Schedule Quick Access */}
       <motion.div
         className="mx-auto mt-6 w-full max-w-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2 }}
+      >
+        <Link href="/patient/schedule">
+          <motion.div
+            className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-sky-50 to-blue-50 px-5 py-4 shadow-sm dark:from-sky-900/20 dark:to-blue-900/20"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <motion.div 
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-500 text-2xl shadow-lg"
+            >
+              📅
+            </motion.div>
+            <div className="flex-1">
+              <p className="font-semibold text-slate-800 dark:text-white">
+                Today&apos;s Schedule
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Sarah visiting at 2:00 PM
+              </p>
+            </div>
+            <svg className="h-5 w-5 text-sky-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </motion.div>
+        </Link>
+      </motion.div>
+
+      {/* Mood Check-in Quick Access */}
+      <motion.div
+        className="mx-auto mt-4 w-full max-w-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.3 }}
       >
         <Link href="/patient/mood">
           <motion.div
