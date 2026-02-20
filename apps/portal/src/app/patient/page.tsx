@@ -349,6 +349,41 @@ export default function PatientHomePage() {
         </div>
       </motion.div>
 
+      {/* Mood Check-in Quick Access */}
+      <motion.div
+        className="mx-auto mt-6 w-full max-w-sm"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+      >
+        <Link href="/patient/mood">
+          <motion.div
+            className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 px-5 py-4 shadow-sm dark:from-amber-900/20 dark:to-orange-900/20"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <motion.div 
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl shadow-lg"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              😊
+            </motion.div>
+            <div className="flex-1">
+              <p className="font-semibold text-slate-800 dark:text-white">
+                How are you feeling?
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Tap to check in
+              </p>
+            </div>
+            <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </motion.div>
+        </Link>
+      </motion.div>
+
       {/* Reassurance Message */}
       <motion.footer
         className="mt-auto pt-8 text-center"
