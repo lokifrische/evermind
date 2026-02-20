@@ -137,6 +137,7 @@ export interface Message {
 
 // Data fetching functions
 export async function getFamilyMembers(careCircleId: string): Promise<FamilyMember[]> {
+  console.log('[Supabase] Fetching family members for care circle:', careCircleId);
   const { data, error } = await supabase
     .from('family_members')
     .select('*')
@@ -144,13 +145,15 @@ export async function getFamilyMembers(careCircleId: string): Promise<FamilyMemb
     .order('display_order');
   
   if (error) {
-    console.error('Error fetching family members:', error);
+    console.error('[Supabase] Error fetching family members:', error.message);
     return [];
   }
+  console.log('[Supabase] Got', data?.length || 0, 'family members');
   return data || [];
 }
 
 export async function getMemories(careCircleId: string): Promise<Memory[]> {
+  console.log('[Supabase] Fetching memories for care circle:', careCircleId);
   const { data, error } = await supabase
     .from('memories')
     .select('*')
@@ -158,9 +161,10 @@ export async function getMemories(careCircleId: string): Promise<Memory[]> {
     .order('created_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching memories:', error);
+    console.error('[Supabase] Error fetching memories:', error.message);
     return [];
   }
+  console.log('[Supabase] Got', data?.length || 0, 'memories');
   return data || [];
 }
 
